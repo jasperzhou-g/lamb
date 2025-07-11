@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "lexer.h"
+#include "parser.h"
 
 char *read_file_chars(FILE *f, long* len) {
     if (f == NULL) 
@@ -26,17 +28,29 @@ int main(int argc, char **argv) {
     }
     long len = 0;
     char *source = read_file_chars(file, &len);
-
-    struct LexerState lexer_state = cons_lexer(source, len);
-    struct TokenList* tl = scan_source(&lexer_state);
-    for (struct TokenList *curr = tl; curr; curr = curr->next) {
-        printf(" %s ", curr->t.str_type);
-    }
-    tl_delete(tl);
-    printf("\n");
-    printf("%s\n", source);
-
     fclose(file);
+    file = NULL;
+
+    struct LexerState* lexer_state = cons_lexer(source, len);
+    struct TokenList* tl = scan_source(lexer_state);
+    assert(tl);
+    lexer_free(lexer_state);
+    lexer_state = NULL;
+    
+    struct ParserState* parser_state = cons_parser(tl, source);
+    struct AST* ast = parse(parser_state);
+
+    for (struct TokenList* curr = tl; curr; curr = curr->next) {
+        printf("%s ", curr->t.str_type);
+    }
+    printf("\n");
+
+    tl_free(tl);
+    tl = NULL;
+
+    parser_free(parser_state);
     free(source);
+    parser_state = NULL;
+    source = NULL;
     return 0;
-}
+}   

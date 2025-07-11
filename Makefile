@@ -6,7 +6,7 @@ all: $(objects)
 	$(CC) $(objects) -o lamb
 
 $(objects): %.o: ./src/%.c
-	$(CC) -c $^ -o $@
+	$(CC) $(CFLAGS) -c $^ -o $@
 
 clean:
 	rm -rf *.c *.o lamb

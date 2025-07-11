@@ -148,27 +148,35 @@ static struct OptionalToken scan_token(struct LexerState* s) {
     return create_none_token(s);
 }
 
-struct LexerState cons_lexer(const char* source, int len) {
-    return (struct LexerState) {source, len, 1, 0, 0};
+struct LexerState* cons_lexer(const char* source, int len) {
+    struct LexerState* ls = malloc(sizeof(struct LexerState));
+    ls->source = source;
+    ls->len = len;
+    ls->line = 1;
+    ls->start = 0;
+    ls->curr = 0;
+    return ls;
+}
+
+void lexer_free(struct LexerState* ls) {
+    free(ls);
 }
 
 struct TokenList* scan_source(struct LexerState* s) {
     struct OptionalToken sof = create_token(s, "SOF", TOK_SOF);
     struct TokenList* tokens = tl_cons(sof.t, NULL);
-    int len_tokens = 0;
     while (s->curr < s->len) {
         s->start = s->curr;
         struct OptionalToken token = scan_token(s);
         if (token.e == OPTIONAL_TOKEN_YES)
             tl_add_token(tokens, token.t);
-            len_tokens++;
     }
     struct OptionalToken eof = create_token(s, "EOF", TOK_EOF);
     tl_add_token(tokens, eof.t);
     return tokens;
 }
 
-void tl_delete(struct TokenList* tl) {
+void tl_free(struct TokenList* tl) {
     struct TokenList* curr = tl;
     while (curr) {
         struct TokenList* old = curr;

@@ -8,7 +8,7 @@ enum AST_Type {
 };
 
 struct Num {
-
+    
 };
 
 struct App {
