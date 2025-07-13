@@ -34,16 +34,17 @@ struct Token {
     int line;
 };
 
-enum OptionalTokenTag {
+enum OptTokenTag {
     OPTIONAL_TOKEN_YES,
     OPTIONAL_TOKEN_NO
 };
 
 struct OptionalToken {
     struct Token t;
-    enum OptionalTokenTag e;
+    enum OptTokenTag e;
 };
 
+// Singly-linked list FTW! Totally no regrets!
 struct TokenList {
     struct Token t;
     struct TokenList *next;

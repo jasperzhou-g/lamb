@@ -1,6 +1,12 @@
 #ifndef LAMB_AST_H
 #define LAMB_AST_H
 
+struct AST;
+struct Num;
+struct App;
+struct Abs;
+union Expr;
+
 enum AST_Type {
     AST_ABS,
     AST_APP,
@@ -8,15 +14,21 @@ enum AST_Type {
 };
 
 struct Num {
-    
+    unsigned int n;
 };
 
-struct App {
-
+struct Identifier {
+    char* str;
 };
 
 struct Abs {
-    
+    struct Identifier* id;
+    struct AST* body;
+};
+
+struct App {
+    struct App* app;
+    struct AST* arg;
 };
 
 union Expr {

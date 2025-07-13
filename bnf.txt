@@ -1,0 +1,4 @@
+<expr> ::= <abs> | <app> | <unary> | "(" <expr> ")"
+<abs> ::= "fn" VAR <expr>
+<app> ::= "(" <abs> ")" "(" <expr> ")"
+<unary> ::= NUM | "+"NUM

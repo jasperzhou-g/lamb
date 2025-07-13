@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
     }
     FILE *file = fopen(argv[1], "r");
     if (!file) {
-        fprintf(stderr, "err: unable to read file \"%s\".\n",  argv[1]);
+        fprintf(stderr, "lamb: err: cannot find \"%s\": No such file.\n",  argv[1]);
         exit(1);
     }
     long len = 0;

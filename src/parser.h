@@ -6,8 +6,8 @@
 
 struct ParserState {
     struct TokenList* tokens; 
+    struct TokenList* prev; // what happens if you use a singly-linked list
     const char* src;
-    int current;
 };
 
 struct AST* parse(struct ParserState* parser_state);
