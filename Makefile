@@ -1,12 +1,23 @@
 CC = gcc
 CFLAGS = -g -Wall -Wpedantic
-objects = main.o lexer.o error.o parser.o
+SRC_DIR = ./src
+BUILD_DIR = ./build
 
-all: $(objects)
-	$(CC) $(objects) -o lamb
+SOURCES = main lexer error parser
 
-$(objects): %.o: ./src/%.c
-	$(CC) $(CFLAGS) -c $^ -o $@
+OBJECTS = $(addprefix $(BUILD_DIR)/, $(addsuffix .o, $(SOURCES)))
+EXEC = $(BUILD_DIR)/lamb
 
+# Link exec
+$(EXEC): $(OBJECTS)
+	$(CC) $(OBJECTS) -o $@
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+.PHONY: clean
 clean:
-	rm -rf *.c *.o lamb
+	rm -r $(BUILD_DIR)
