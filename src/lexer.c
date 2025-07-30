@@ -82,7 +82,7 @@ static struct OptionalToken number(struct LexerState* s) {
 static struct OptionalToken identifier(struct LexerState* s) {
     while (is_alphanumeric(lexer_peek(s))) lexer_advance(s);
     enum TokenType token_type;
-    const char* tok_str = "keyword";
+    const char* tok_str;
     if (!strncmp(&s->source[s->start], "if", 2)) {
         token_type = TOK_IF;
         tok_str = "IF";
@@ -116,7 +116,6 @@ static struct OptionalToken identifier(struct LexerState* s) {
 
 static struct OptionalToken scan_token(struct LexerState* s) {
     char c = lexer_advance(s);
-    struct OptionalToken ot = create_none_token(s);
     switch (c) {
         case '+': {
             return create_token(s, "+", TOK_PLUS);

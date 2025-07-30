@@ -15,9 +15,6 @@ $(EXEC): $(OBJECTS)
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
-
 .PHONY: clean
 clean:
 	rm -r $(BUILD_DIR)

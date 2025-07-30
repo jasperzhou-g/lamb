@@ -1,5 +1,6 @@
 #ifndef LAMB_AST_H
 #define LAMB_AST_H
+#include "stringt.h"
 
 struct AST;
 struct Num;
@@ -22,7 +23,7 @@ struct Succ {
 };
 
 struct Identifier {
-    char* str;
+    struct String* str;
 };
 
 struct Abs {

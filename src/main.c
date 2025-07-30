@@ -9,6 +9,9 @@ char *read_file_chars(FILE *f, long* len) {
         return NULL;
     fseek(f, 0, SEEK_END);
     *len = ftell(f);
+    if (*len < 0) {
+        return NULL;
+    }
     fseek(f, 0, SEEK_SET);
     char *buffer = (char *) malloc(*len + 1);
     fread(buffer, *len, 1, f);
@@ -28,6 +31,11 @@ int main(int argc, char **argv) {
     }
     long len = 0;
     char *source = read_file_chars(file, &len);
+    if (!source) {
+        fprintf(stderr, "lamb: err: cannot read \"%s\": Error reading files.\n", argv[1]);
+        fclose(file);
+        exit(1);
+    }
     fclose(file);
     file = NULL;
 
