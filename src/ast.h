@@ -17,6 +17,10 @@ struct Num {
     unsigned int n;
 };
 
+struct Succ {
+    struct Num* num;
+};
+
 struct Identifier {
     char* str;
 };
@@ -27,19 +31,21 @@ struct Abs {
 };
 
 struct App {
-    struct App* app;
+    struct Abs* abs;
     struct AST* arg;
 };
 
 union Expr {
-    struct App app;
-    struct Abs abs;
-    struct Num num;
+    struct App* app;
+    struct Abs* abs;
+    struct Num* num;
 };
 
 struct AST {
     union Expr e;
     enum AST_Type t;
 };
+
+void pprint_ast(struct AST* ast);
 
 #endif
