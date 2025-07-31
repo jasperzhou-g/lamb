@@ -3,6 +3,8 @@
 #include <assert.h>
 #include "lexer.h"
 #include "parser.h"
+#include "ast.h"
+#include "stringt.h"
 
 char *read_file_chars(FILE *f, long* len) {
     if (f == NULL) 
@@ -60,5 +62,9 @@ int main(int argc, char **argv) {
     free(source);
     parser_state = NULL;
     source = NULL;
+
+    struct AST* test_ast = make_abs(make_identifier(string_create("x")), make_num(42));
+    pprint_ast(test_ast);
+    free_ast(test_ast);
     return 0;
 }   

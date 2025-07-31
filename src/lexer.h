@@ -34,7 +34,7 @@ struct Token {
     int line;
 };
 
-enum OptTokenTag {
+enum OptTokenTag { // Overengineered to perfection!
     OPTIONAL_TOKEN_YES,
     OPTIONAL_TOKEN_NO
 };

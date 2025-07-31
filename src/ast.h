@@ -2,51 +2,32 @@
 #define LAMB_AST_H
 #include "stringt.h"
 
-struct AST;
-struct Num;
-struct App;
-struct Abs;
-union Expr;
-
-enum AST_Type {
+enum ASTType {
     AST_ABS,
     AST_APP,
+    AST_IDENTIFIER,
     AST_NUM,
+    AST_SUCC
 };
 
-struct Num {
-    unsigned int n;
-};
-
-struct Succ {
-    struct Num* num;
-};
-
-struct Identifier {
-    struct String* str;
-};
-
-struct Abs {
-    struct Identifier* id;
-    struct AST* body;
-};
-
-struct App {
-    struct Abs* abs;
-    struct AST* arg;
-};
-
-union Expr {
-    struct App* app;
-    struct Abs* abs;
-    struct Num* num;
-};
+struct AST;
 
 struct AST {
-    union Expr e;
-    enum AST_Type t;
+    enum ASTType tag;
+    union {
+        struct {struct AST* fn; struct AST* arg; } app;
+        struct {struct AST* id; struct AST* body; } abs;
+        struct {struct String name; } identifier;
+        struct {int value; } num;
+        struct {struct AST* arg; } succ;
+    } u;
 };
-
 void pprint_ast(struct AST* ast);
+struct AST* make_abs(struct AST* id, struct AST* body);
+struct AST* make_app(struct AST* fn, struct AST* arg);
+struct AST* make_identifier(struct String name);
+struct AST* make_num(int value);
+struct AST* make_succ(struct AST* arg);
+void free_ast(struct AST* ast);
 
 #endif

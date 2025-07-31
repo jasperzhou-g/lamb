@@ -8,7 +8,8 @@ struct String {
     int length;
 };
 
-struct String* string_create(const char* cstr);
+struct String string_create(const char* cstr);
+struct String string_ncreate(const char* cstr, unsigned int len);
 void string_free(struct String* s); 
 
 #endif
