@@ -75,7 +75,7 @@ static int is_alphanumeric(char c) {
 
 static struct OptionalToken number(struct LexerState* s) {
     while (is_digit(lexer_peek(s))) lexer_advance(s);
-    struct Token tok = {"NUMBER", TOK_NONE, s->start, s->curr, s->line};
+    struct Token tok = {"NUMBER", TOK_NUMBER, s->start, s->curr, s->line};
     return (struct OptionalToken) {tok, OPTIONAL_TOKEN_YES};
 }
 
@@ -116,6 +116,7 @@ static struct OptionalToken identifier(struct LexerState* s) {
 
 static struct OptionalToken scan_token(struct LexerState* s) {
     char c = lexer_advance(s);
+    (void)(lexer_match); // hack for warning
     switch (c) {
         case '+': {
             return create_token(s, "+", TOK_PLUS);
@@ -147,7 +148,7 @@ static struct OptionalToken scan_token(struct LexerState* s) {
     return create_none_token(s);
 }
 
-struct LexerState* cons_lexer(const char* source, int len) {
+struct LexerState* lexer_init(const char* source, int len) {
     struct LexerState* ls = malloc(sizeof(struct LexerState));
     ls->source = source;
     ls->len = len;

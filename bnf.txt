@@ -1,4 +1,5 @@
-<expr> ::= <abs> | <app> | <unary> | "(" <expr> ")"
+<expr> ::= <abs> | <app>
 <abs> ::= "fn" VAR <expr>
-<app> ::= "(" <abs> ")" "(" <expr> ")"
-<unary> ::= NUM | "+"NUM
+<app> ::= <unary> { "(" <expr> ")"}*
+<unary> ::= "+" <unary> | <primary>;
+<primary> ::= NUM | VAR | "(" <expr> ")";

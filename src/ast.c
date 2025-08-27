@@ -12,12 +12,15 @@ static void pprint_ast_helper(struct AST* ast) {
             printf(")");
             break;
         case AST_APP:
-            printf("(");
-            pprint_ast_helper(ast->u.app.fn);
-            printf(" ");
-            pprint_ast_helper(ast->u.app.arg);
-            printf(")");
-            break;
+            if (ast->u.app.alist) {
+                pprint_ast_helper(ast->u.app.fn);
+                printf("[");
+                pprint_ast_helper(ast->u.app.alist);
+                printf("]");
+            } else {
+                pprint_ast_helper(ast->u.app.fn);
+            }
+             break;
         case AST_NUM:
             printf("%d", ast->u.num.value);
             break;
@@ -28,6 +31,16 @@ static void pprint_ast_helper(struct AST* ast) {
             break;
         case AST_IDENTIFIER:
             printf("%s", ast->u.identifier.name.b);
+            break;
+        case AST_ERR:
+            printf("%s", ast->u.err.error_message.b);
+            break;
+        case AST_ARGLIST:
+            pprint_ast_helper(ast->u.app_list.arg);
+            if (ast->u.app_list.next) {
+                printf(", ");
+                pprint_ast_helper(ast->u.app_list.next);
+            }
             break;
         default:
             fprintf(stderr, "lamb: err: [pprint_ast_helper] Unknown AST type.\n");
@@ -47,11 +60,11 @@ struct AST* make_abs(struct AST* id, struct AST* body) {
     return ast;
 }
 
-struct AST* make_app(struct AST* fn, struct AST* arg) {
+struct AST* make_app(struct AST* fn, struct AST* alist) {
     struct AST* ast = malloc(sizeof(struct AST));
     ast->tag = AST_APP;
     ast->u.app.fn = fn;
-    ast->u.app.arg = arg;
+    ast->u.app.alist = alist;
     return ast;
 }
 
@@ -76,6 +89,21 @@ struct AST* make_succ(struct AST* arg) {
     return ast;
 }
 
+struct AST* make_err(struct String error_message) {
+    struct AST* ast = malloc(sizeof(struct AST));
+    ast->tag = AST_ERR;
+    ast->u.err.error_message = error_message;
+    return ast;
+}
+
+struct AST* cons_alist(struct AST* arg, struct AST* next) {
+    struct AST* ast = malloc(sizeof(struct AST));
+    ast->tag = AST_ARGLIST;
+    ast->u.app_list.arg = arg;
+    ast->u.app_list.next = next;
+    return ast;
+}
+
 void free_ast(struct AST* ast) {
     if (!ast) return;
     switch (ast->tag) {
@@ -85,7 +113,7 @@ void free_ast(struct AST* ast) {
             break;
         case AST_APP:
             free_ast(ast->u.app.fn);
-            free_ast(ast->u.app.arg);
+            free_ast(ast->u.app.alist);
             break;
         case AST_NUM:
             break;
@@ -94,6 +122,13 @@ void free_ast(struct AST* ast) {
             break;
         case AST_IDENTIFIER:
             string_free(&ast->u.identifier.name);
+            break;
+        case AST_ERR:
+            string_free(&ast->u.err.error_message);
+            break;
+        case AST_ARGLIST:
+            free_ast(ast->u.app_list.arg);
+            free_ast(ast->u.app_list.next);
             break;
         default:
             fprintf(stderr, "lamb: err: [free_ast] Unknown AST type.\n");

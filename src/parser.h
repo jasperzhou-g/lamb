@@ -11,7 +11,7 @@ struct ParserState {
 };
 
 struct AST* parse(struct ParserState* parser_state);
-struct ParserState* cons_parser(struct TokenList* tv, const char* src);
+struct ParserState* init_parser(struct TokenList* tv, const char* src);
 void parser_free(struct ParserState* ps);
 
 #endif

@@ -51,7 +51,7 @@ struct TokenList {
 };
 
 // why use lexer generators when you can reinvent the wheel
-struct LexerState* cons_lexer(const char* source, int len);
+struct LexerState* lexer_init(const char* source, int len);
 void lexer_free(struct LexerState* ls);
 struct TokenList* scan_source(struct LexerState* s);
 void tl_free(struct TokenList* tl);

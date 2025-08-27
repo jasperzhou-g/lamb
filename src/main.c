@@ -41,19 +41,15 @@ int main(int argc, char **argv) {
     fclose(file);
     file = NULL;
 
-    struct LexerState* lexer_state = cons_lexer(source, len);
+    struct LexerState* lexer_state = lexer_init(source, len);
     struct TokenList* tl = scan_source(lexer_state);
     assert(tl);
     lexer_free(lexer_state);
     lexer_state = NULL;
     
-    struct ParserState* parser_state = cons_parser(tl, source);
+    struct ParserState* parser_state = init_parser(tl, source);
     struct AST* ast = parse(parser_state);
-
-    for (struct TokenList* curr = tl; curr; curr = curr->next) {
-        printf("%s ", curr->t.str_type);
-    }
-    printf("\n");
+    pprint_ast(ast);
 
     tl_free(tl);
     tl = NULL;
