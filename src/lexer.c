@@ -23,7 +23,7 @@ static void tl_add_token(struct TokenList* l, struct Token t) {
 }
 
 static struct OptionalToken create_token(
-    struct LexerState* s, const char* str_t, enum TokenType t) {
+    struct Lexer* s, const char* str_t, enum TokenType t) {
     struct Token tok = {
         .str_type = str_t, .type = t,
         .line = s->line, .str_start = s->start, .str_end = s->curr
@@ -32,7 +32,7 @@ static struct OptionalToken create_token(
 }
 
 static struct OptionalToken create_none_token(
-    struct LexerState* s) {
+    struct Lexer* s) {
     struct Token tok = {
         .str_type = "NONE", .type = TOK_NONE,
         .line = s->line, .str_start = s->start, .str_end = s->curr
@@ -40,7 +40,7 @@ static struct OptionalToken create_none_token(
     return (struct OptionalToken) {tok, OPTIONAL_TOKEN_NO};
 }
 
-static int lexer_match(struct LexerState* s, char expected) {
+static int lexer_match(struct Lexer* s, char expected) {
     if (s->curr >= s->len)
         return 0;
     if (s->source[s->curr] != expected)
@@ -49,11 +49,11 @@ static int lexer_match(struct LexerState* s, char expected) {
     return 1;
 }
 
-static char lexer_advance(struct LexerState* s) {
+static char lexer_advance(struct Lexer* s) {
     return s->source[(s->curr)++];
 }
 
-static char lexer_peek(struct LexerState* s) {
+static char lexer_peek(struct Lexer* s) {
     if (s->curr >= s->len)
         return '\0';
     return s->source[s->curr];
@@ -73,13 +73,13 @@ static int is_alphanumeric(char c) {
     return is_digit(c) || is_alpha(c);
 }
 
-static struct OptionalToken number(struct LexerState* s) {
+static struct OptionalToken number(struct Lexer* s) {
     while (is_digit(lexer_peek(s))) lexer_advance(s);
     struct Token tok = {"NUMBER", TOK_NUMBER, s->start, s->curr, s->line};
     return (struct OptionalToken) {tok, OPTIONAL_TOKEN_YES};
 }
 
-static struct OptionalToken identifier(struct LexerState* s) {
+static struct OptionalToken identifier(struct Lexer* s) {
     while (is_alphanumeric(lexer_peek(s))) lexer_advance(s);
     enum TokenType token_type;
     const char* tok_str;
@@ -114,7 +114,7 @@ static struct OptionalToken identifier(struct LexerState* s) {
     return create_token(s, tok_str, token_type);
 }
 
-static struct OptionalToken scan_token(struct LexerState* s) {
+static struct OptionalToken scan_token(struct Lexer* s) {
     char c = lexer_advance(s);
     (void)(lexer_match); // hack for warning
     switch (c) {
@@ -142,14 +142,14 @@ static struct OptionalToken scan_token(struct LexerState* s) {
                 return number(s);
             else if (is_alpha(c))
                 return identifier(s);
-            report(s->line, "(unimplemented)", "Unexpected character.\n");
+            report(s->line, "(in lexer)", "Unexpected character.\n");
         }
     }
     return create_none_token(s);
 }
 
-struct LexerState* lexer_init(const char* source, int len) {
-    struct LexerState* ls = malloc(sizeof(struct LexerState));
+struct Lexer* lexer_init(const char* source, int len) {
+    struct Lexer* ls = malloc(sizeof(struct Lexer));
     ls->source = source;
     ls->len = len;
     ls->line = 1;
@@ -158,11 +158,11 @@ struct LexerState* lexer_init(const char* source, int len) {
     return ls;
 }
 
-void lexer_free(struct LexerState* ls) {
+void lexer_free(struct Lexer* ls) {
     free(ls);
 }
 
-struct TokenList* scan_source(struct LexerState* s) {
+struct TokenList* scan_source(struct Lexer* s) {
     struct OptionalToken sof = create_token(s, "SOF", TOK_SOF);
     struct TokenList* tokens = tl_cons(sof.t, NULL);
     while (s->curr < s->len) {

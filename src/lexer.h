@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-struct LexerState {
+struct Lexer {
     const char* source;
     long len;
     int line;
@@ -31,7 +31,7 @@ struct Token {
     enum TokenType type;
     int str_start;
     int str_end;
-    int line;
+    unsigned int line;
 };
 
 enum OptTokenTag { // Overengineered to perfection!
@@ -51,9 +51,9 @@ struct TokenList {
 };
 
 // why use lexer generators when you can reinvent the wheel
-struct LexerState* lexer_init(const char* source, int len);
-void lexer_free(struct LexerState* ls);
-struct TokenList* scan_source(struct LexerState* s);
+struct Lexer* lexer_init(const char* source, int len);
+void lexer_free(struct Lexer* ls);
+struct TokenList* scan_source(struct Lexer* s);
 void tl_free(struct TokenList* tl);
 
 #endif

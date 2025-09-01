@@ -3,7 +3,7 @@ CFLAGS = -g -Wall -Wpedantic
 SRC_DIR = ./src
 BUILD_DIR = ./build
 
-SOURCES = main lexer error parser ast stringt
+SOURCES = main lexer error parser ast stringt interpreter
 
 OBJECTS = $(addprefix $(BUILD_DIR)/, $(addsuffix .o, $(SOURCES)))
 EXEC = $(BUILD_DIR)/lamb

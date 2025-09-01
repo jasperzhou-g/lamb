@@ -4,14 +4,14 @@
 #include "ast.h"
 // recursive descent parser
 
-struct ParserState {
+struct Parser {
     struct TokenList* tokens; 
     struct TokenList* prev; // what happens if you use a singly-linked list
     const char* src;
 };
 
-struct AST* parse(struct ParserState* parser_state);
-struct ParserState* init_parser(struct TokenList* tv, const char* src);
-void parser_free(struct ParserState* ps);
+struct AST* parse(struct Parser* parser_state);
+struct Parser* parser_init(struct TokenList* tv, const char* src);
+void parser_free(struct Parser* ps);
 
 #endif

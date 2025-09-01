@@ -1,9 +1,10 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <assert.h>
 #include "lexer.h"
 #include "parser.h"
 
-static void debug_tokens(struct ParserState* ps) {
+static void debug_tokens(struct Parser* ps) {
     printf("tokens: ");
     for (struct TokenList* curr = ps->tokens; curr; curr = curr->next) {
         printf("%s ", curr->t.str_type);
@@ -11,7 +12,20 @@ static void debug_tokens(struct ParserState* ps) {
     printf("\n");
 }
 
-static struct Token ps_peek(struct ParserState* ps) {
+static struct String err_line_pref(unsigned int line, struct String msg) {
+    return string_concat(
+        string_concat(
+            string_create("error [line "),
+            string_concat(
+                string_from_n(line),
+                string_create("]: ")
+            )
+        ),
+        msg
+    );
+}
+
+static struct Token ps_peek(struct Parser* ps) {
     if (!ps->tokens) {
         fprintf(stderr, "Critical error: no tokens where EOF");
         exit(1);
@@ -19,23 +33,23 @@ static struct Token ps_peek(struct ParserState* ps) {
     return ps->tokens->t;
 } 
 
-static bool ps_is_done(struct ParserState* ps) {
+static bool ps_is_done(struct Parser* ps) {
     return ps_peek(ps).type == TOK_EOF;
 }
 
-static struct Token ps_advance(struct ParserState* ps) {
+static struct Token ps_advance(struct Parser* ps) {
     struct Token tok = ps->tokens->t;
     ps->prev = ps->tokens;
     ps->tokens = ps->tokens->next;
     return tok;
 }
 
-static bool ps_check(struct ParserState* ps, enum TokenType t) {
+static bool ps_check(struct Parser* ps, enum TokenType t) {
     if (ps_is_done(ps)) return false;
     return ps_peek(ps).type == t;
 }
 
-static bool ps_match(struct ParserState* ps, enum TokenType t) {
+static bool ps_match(struct Parser* ps, enum TokenType t) {
     if (ps_check(ps, t)) {
         ps_advance(ps);
         return true;
@@ -43,18 +57,17 @@ static bool ps_match(struct ParserState* ps, enum TokenType t) {
     return false;
 }
 
-static struct Token ps_prev(struct ParserState* ps) {
+static struct Token ps_prev(struct Parser* ps) {
     return ps->prev->t;
 }
 
-static struct AST* parse_unary(struct ParserState* ps);
-static struct AST* parse_app(struct ParserState* ps);
-static struct AST* parse_abs(struct ParserState* ps);
-static struct AST* parse_expr(struct ParserState* ps);
+// Lambda calculus application, abstraction + successor 
+static struct AST* parse_unary(struct Parser* ps);
+static struct AST* parse_app(struct Parser* ps);
+static struct AST* parse_abs(struct Parser* ps);
+static struct AST* parse_expr(struct Parser* ps);
 
-static struct AST* parse_unary(struct ParserState* ps) {
-    printf("[parse_unary]\n");
-    debug_tokens(ps);
+static struct AST* parse_unary(struct Parser* ps) {
     if (ps_match(ps, TOK_IDENTIFIER)) {
         struct Token id_tok = ps_prev(ps);
         struct String name = string_ncreate(
@@ -69,7 +82,13 @@ static struct AST* parse_unary(struct ParserState* ps) {
         if (expr->tag == AST_ERR) return expr;
         if (!ps_match(ps, TOK_RIGHT_PAREN)) {
             free_ast(expr);
-            return make_err(string_create("Expected ')' after expression."));
+
+            return make_err(
+                err_line_pref(
+                    ps->tokens->t.line, 
+                    string_create("Expected ')' after expression.")
+                )
+            );
         }
         return expr;
     } else if (ps_match(ps, TOK_PLUS)) {
@@ -77,30 +96,45 @@ static struct AST* parse_unary(struct ParserState* ps) {
         if (inner->tag == AST_ERR) return inner;
         return make_succ(inner);
     }
-    return make_err(string_create("Unexpected token."));
+    return make_err(
+        err_line_pref(
+            ps->tokens->t.line,
+            string_concat(
+                string_create("Unexpected token "), 
+                string_create(ps->tokens->t.str_type)
+            )
+        )
+    );
 }
-
-static struct AST* parse_expr(struct ParserState* ps) {
-    printf("[parse_expr]\n");
-    debug_tokens(ps);
+static struct AST* parse_expr(struct Parser* ps) {
     if (!ps) return NULL;
     if (!ps->tokens) return NULL; //
+    static struct AST* expr = NULL;
     if (ps->tokens->t.type == TOK_FN) {
-        return parse_abs(ps);
+        expr = parse_abs(ps);
+    } else {
+        expr = parse_app(ps);
     }
-    return parse_app(ps);
+    return expr;
 }
 
-static struct AST* parse_abs(struct ParserState* ps) {
-    printf("[parse_abs]\n");
-    debug_tokens(ps);
+static struct AST* parse_abs(struct Parser* ps) {
     if (!ps_match(ps, TOK_FN)) {
-        struct String err_msg = string_create("Expected 'fn' keyword.");
-        return make_err(err_msg);
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line, 
+                string_create("Expected 'fn' keyword.")
+            )
+        );
     }
     if (!ps_match(ps, TOK_IDENTIFIER)) {
-        struct String err_msg = string_create("Expected identifier after 'fn'.");
-        return make_err(err_msg);
+        return make_err(
+            err_line_pref(
+                ps->prev->t.line, 
+                string_create("Expected identifier after 'fn'.")
+            )
+        );
+
     }
     struct Token id_tok = ps_prev(ps);
     struct String id_tok_str = string_ncreate(ps->src + id_tok.str_start, id_tok.str_end - id_tok.str_start);
@@ -112,9 +146,7 @@ static struct AST* parse_abs(struct ParserState* ps) {
     return make_abs(make_identifier(id_tok_str), body);
 }
 
-static struct AST* parse_app(struct ParserState *ps) {
-    printf("[parse_app]\n");
-    debug_tokens(ps);
+static struct AST* parse_app(struct Parser *ps) {
     struct AST* unary = parse_unary(ps);
     if (unary->tag == AST_ERR) 
         return unary;
@@ -129,28 +161,41 @@ static struct AST* parse_app(struct ParserState *ps) {
         if (!ps_match(ps, TOK_RIGHT_PAREN)) {
             free_ast(unary);
             free_ast(alist);
-            struct String err_msg = string_create("Expected ')' after application.");
-            return make_err(err_msg);
+            return make_err(
+                err_line_pref(
+                    ps->prev->t.line, 
+                    string_create("Expected ')' after application")
+                )
+            );
         }
         alist = cons_alist(arg, alist);
     }
-    struct AST* app = make_app(unary, alist);
-    return app;
+    return make_app(unary, alist);
 }
 
-struct ParserState* init_parser(struct TokenList* tv, const char* src) {
-    struct ParserState* ps = malloc(sizeof(struct ParserState));
+struct Parser* parser_init(struct TokenList* tv, const char* src) {
+    struct Parser* ps = malloc(sizeof(struct Parser));
     ps->src = src;
     ps->tokens = tv;
     ps->prev = NULL;
     return ps;
 }
 
-void parser_free(struct ParserState* ps) {
+void parser_free(struct Parser* ps) {
     free(ps);
 }
 
-struct AST* parse(struct ParserState* ps) {
+struct AST* parse(struct Parser* ps) {
     ps_advance(ps);
-    return parse_expr(ps);
+    struct AST* program = parse_expr(ps);
+    if (!ps_is_done(ps)) {
+        free_ast(program);
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line, 
+                string_create("Expected EOF, but received tokens after program end.")
+            )
+        );
+    }
+    return program;
 }
