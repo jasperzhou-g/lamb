@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 
     struct Lexer* lexer_state = lexer_init(source, len);
     struct TokenList* tl = scan_source(lexer_state);
-    assert(tl);
+    assert(tl); // EOF is included
     lexer_free(lexer_state);
     lexer_state = NULL;
     
@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
     struct Interpreter lambterpreter = {
         .empty = NULL
     };
+    pprint_ast(ast);
     interpret(&lambterpreter, ast);
 
     tl_free(tl);

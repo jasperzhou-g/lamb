@@ -1,6 +1,8 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
+#include <limits.h>
 #include "lexer.h"
 #include "parser.h"
 
@@ -76,7 +78,20 @@ static struct AST* parse_unary(struct Parser* ps) {
     } else if (ps_match(ps, TOK_NUMBER)) {
         struct Token num_tok = ps_prev(ps);
         (void)num_tok;
-        return make_num(0); //TODO Read number
+        struct String num_str = string_ncreate(
+            &ps->src[ps_prev(ps).str_start], ps_prev(ps).str_end - ps_prev(ps).str_start);
+        char* endptr;
+        long val = strtol(num_str.b, &endptr, 10);
+        if (*endptr != '\0' || val > INT_MAX) {
+            string_free(&num_str);
+            return make_err(
+                err_line_pref(
+                    ps_prev(ps).line,
+                    string_create("Invalid number literal.")
+                )
+            );
+        }
+        return make_num(val); //TODO Read number
     } else if (ps_match(ps, TOK_LEFT_PAREN)) {
         struct AST* expr = parse_expr(ps);
         if (expr->tag == AST_ERR) return expr;
