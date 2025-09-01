@@ -110,6 +110,10 @@ static struct AST* parse_unary(struct Parser* ps) {
         struct AST* inner = parse_unary(ps);
         if (inner->tag == AST_ERR) return inner;
         return make_succ(inner);
+    } else if (ps_match(ps, TOK_MINUS)) {
+        struct AST* inner = parse_unary(ps);
+        if (inner->tag == AST_ERR) return inner;
+        return make_dec(inner);
     }
     return make_err(
         err_line_pref(

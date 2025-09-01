@@ -13,7 +13,9 @@ struct Lexer {
 
 enum TokenType {
     // Operators
-    TOK_PLUS, TOK_LEFT_PAREN, TOK_RIGHT_PAREN,
+    TOK_PLUS, TOK_MINUS,
+    
+    TOK_LEFT_PAREN, TOK_RIGHT_PAREN,
 
     TOK_IDENTIFIER,
 

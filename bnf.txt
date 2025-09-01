@@ -1,5 +1,5 @@
 <expr> ::= <abs> | <app>
 <abs> ::= "fn" VAR <expr>
 <app> ::= <unary> { "(" <expr> ")"}*
-<unary> ::= "+" <unary> | <primary>;
+<unary> ::= "+" <unary> | | "-" <unary> | <primary>;
 <primary> ::= NUM | VAR | "(" <expr> ")";

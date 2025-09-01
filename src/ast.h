@@ -8,7 +8,7 @@ enum ASTType {
     AST_ARGLIST,
     AST_IDENTIFIER,
     AST_NUM,
-    AST_SUCC,
+    AST_SUCC, AST_DEC, // operators
     AST_ERR
 };
 
@@ -23,6 +23,7 @@ struct AST {
         struct {struct String name; } identifier;
         struct {int value; } num;
         struct {struct AST* arg; } succ;
+        struct {struct AST* arg; } dec;
         struct {struct String error_message; } err;
     } u;
 };
@@ -33,6 +34,7 @@ struct AST* cons_alist(struct AST* arg, struct AST* next);
 struct AST* make_identifier(struct String name);
 struct AST* make_num(int value);
 struct AST* make_succ(struct AST* arg);
+struct AST* make_dec(struct AST* arg);
 struct AST* make_err(struct String error_message);
 void free_ast(struct AST* ast);
 

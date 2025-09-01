@@ -121,6 +121,9 @@ static struct OptionalToken scan_token(struct Lexer* s) {
         case '+': {
             return create_token(s, "+", TOK_PLUS);
         }
+        case '-': {
+            return create_token(s, "-", TOK_MINUS);
+        }
         case '(': {
             return create_token(s, "(", TOK_LEFT_PAREN);
         }

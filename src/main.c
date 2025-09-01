@@ -55,7 +55,6 @@ int main(int argc, char **argv) {
     struct Interpreter lambterpreter = {
         .empty = NULL
     };
-    pprint_ast(ast);
     interpret(&lambterpreter, ast);
 
     tl_free(tl);

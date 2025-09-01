@@ -29,6 +29,11 @@ static void pprint_ast_helper(struct AST* ast) {
             pprint_ast_helper(ast->u.succ.arg);
             printf(")");
             break;
+        case AST_DEC:
+            printf("(-");
+            pprint_ast_helper(ast->u.succ.arg);
+            printf(")");
+            break;
         case AST_IDENTIFIER:
             printf("%s", ast->u.identifier.name.b);
             break;
@@ -89,6 +94,13 @@ struct AST* make_succ(struct AST* arg) {
     return ast;
 }
 
+struct AST* make_dec(struct AST* arg) {
+    struct AST* ast = malloc(sizeof(struct AST));
+    ast->tag = AST_DEC;
+    ast->u.dec.arg = arg;
+    return ast;
+}
+
 struct AST* make_err(struct String error_message) {
     struct AST* ast = malloc(sizeof(struct AST));
     ast->tag = AST_ERR;
@@ -129,6 +141,9 @@ void free_ast(struct AST* ast) {
         case AST_ARGLIST:
             free_ast(ast->u.app_list.arg);
             free_ast(ast->u.app_list.next);
+            break;
+        case AST_DEC:
+            free_ast(ast->u.dec.arg);
             break;
         default:
             fprintf(stderr, "lamb: err: [free_ast] Unknown AST type.\n");
