@@ -10,6 +10,7 @@ enum ASTType {
     AST_NUM,
     AST_SUCC, AST_DEC, // operators
     AST_LET_IN,
+    AST_LETREC,
     AST_IF_ELSE,
     AST_ERR,
 };
@@ -28,6 +29,7 @@ struct AST {
         struct {struct AST* arg; } dec;
         struct {struct String error_message; } err;
         struct {struct String id; struct AST* value; struct AST* expr; } binding; //syntactic sugar for (fn id expr)(value)
+        struct {struct String id; struct AST* fn; struct AST* expr; } letrec; //syntactic sugar for (fn id expr)(value)
         struct {struct AST* cond; struct AST* then_branch; struct AST* else_branch;} if_else;
     } u;
 };

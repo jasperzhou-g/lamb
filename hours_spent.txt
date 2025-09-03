@@ -1,5 +1,0 @@
-~5 hours ?
-~2 hours 7/29/2025 
-
-problems:
-error handling, synchronization

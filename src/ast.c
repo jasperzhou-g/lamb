@@ -59,12 +59,18 @@ static void pprint_ast_helper(struct AST* ast) {
             printf(")");
             break;
         case AST_IF_ELSE:
-            printf("(if ");
+            printf("if ");
             pprint_ast_helper(ast->u.if_else.cond);
             printf(" then ");
             pprint_ast_helper(ast->u.if_else.then_branch);
             printf(" else ");
             pprint_ast_helper(ast->u.if_else.else_branch);
+            break;
+        case AST_LETREC:
+            printf("(def %s=", ast->u.letrec.id.b);
+            pprint_ast_helper(ast->u.letrec.fn);
+            printf(" in (");
+            pprint_ast_helper(ast->u.letrec.expr);
             printf(")");
             break;
         default:
@@ -192,6 +198,11 @@ void free_ast(struct AST* ast) {
             free_ast(ast->u.if_else.cond);
             free_ast(ast->u.if_else.then_branch);
             free_ast(ast->u.if_else.else_branch);
+            break;
+        case AST_LETREC:
+            string_free(&ast->u.letrec.id);
+            free_ast(ast->u.letrec.fn);
+            free_ast(ast->u.letrec.expr);
             break;
         default:
             fprintf(stderr, "lamb: err: [free_ast] Unknown AST type.\n");
