@@ -3,6 +3,11 @@
 #include "ast.h"
 #include "stringt.h"
 
+struct Rc {
+    int count;
+    void (*ref_free)(void*);
+};
+
 struct HashMapBucket {
     void *item;
     struct String key;
@@ -24,9 +29,21 @@ enum LambObjectType {
 struct LambObject {
     enum LambObjectType type;
     void *obj;
+    struct Rc rc;
 };
 
+struct LambClosure {
+    struct Environment* env;
+    struct String param;
+    struct AST* code;
+};
+
+void rc_init(struct Rc* rc, void (*ref_free)(void*));
+void rc_use(struct Rc* rc);
+void rc_release(struct Rc* rc, void** obj);
+
 struct Environment {
+    struct Rc rc;
     struct Environment* enclosing;
     struct HashMap* values;
 };
@@ -43,13 +60,14 @@ void hashmap_free(struct HashMap* hm, void (*value_free)(void*));
 
 struct LambObject* make_lamb_num(int num);
 struct LambObject* make_lamb_err(struct String err);
-void lamb_obj_free(struct LambObject* lobj);
-//struct LambObject* make_lamb_closure(struct AST* abs, struct HashMap* env);
+struct LambObject* make_lamb_closure(struct AST* abs, struct String param, struct Environment* env);
+void lamb_obj_free(void* lobj_ptr);
 
 struct Environment* env_create(struct Environment* enclosing);
-void env_free(struct Environment* env);
+struct LambObject* env_get(struct Environment* env, struct String key);
+void env_put(struct Environment* env, struct String key, struct LambObject* val);
+void env_free(void* env);
 
-struct LambObject* eval_expr(struct Interpreter* state, struct AST* expr);
 void interpret(struct Interpreter* state, struct AST* program);
 
 #endif

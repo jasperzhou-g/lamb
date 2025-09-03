@@ -43,9 +43,20 @@ static void pprint_ast_helper(struct AST* ast) {
         case AST_ARGLIST:
             pprint_ast_helper(ast->u.app_list.arg);
             if (ast->u.app_list.next) {
-                printf(", ");
+                printf("[");
                 pprint_ast_helper(ast->u.app_list.next);
+                printf("]");
+            } else {
+                printf(" NIL");
             }
+            break;
+        case AST_LET_IN:
+            printf("%s", ast->u.binding.id.b);
+            printf("=");
+            pprint_ast_helper(ast->u.binding.value);
+            printf(" in (");
+            pprint_ast_helper(ast->u.binding.expr);
+            printf(")");
             break;
         default:
             fprintf(stderr, "lamb: err: [pprint_ast_helper] Unknown AST type.\n");
@@ -108,6 +119,15 @@ struct AST* make_err(struct String error_message) {
     return ast;
 }
 
+struct AST* make_binding(struct String id, struct AST* value, struct AST* expr) {
+    struct AST* ast = malloc(sizeof(struct AST));
+    ast->tag = AST_LET_IN;
+    ast->u.binding.id = id;
+    ast->u.binding.value = value;
+    ast->u.binding.expr = expr;
+    return ast;
+}
+
 struct AST* cons_alist(struct AST* arg, struct AST* next) {
     struct AST* ast = malloc(sizeof(struct AST));
     ast->tag = AST_ARGLIST;
@@ -144,6 +164,11 @@ void free_ast(struct AST* ast) {
             break;
         case AST_DEC:
             free_ast(ast->u.dec.arg);
+            break;
+        case AST_LET_IN:
+            string_free(&ast->u.binding.id);
+            free_ast(ast->u.binding.value);
+            free_ast(ast->u.binding.expr);
             break;
         default:
             fprintf(stderr, "lamb: err: [free_ast] Unknown AST type.\n");

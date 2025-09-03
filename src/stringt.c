@@ -50,6 +50,12 @@ struct String string_concat(struct String a, struct String b) {
     return (struct String) {.b = new_b, .length = new_length};
 }
 
+struct String string_clone(struct String s) {
+    char* new_b = (char*)malloc(s.length + 1);
+    strcpy(new_b, s.b);
+    return (struct String) {.b = new_b, .length = s.length};
+}
+
 struct String string_from_n(unsigned int n) {
     char buffer[20];
     if (n > 1000) {

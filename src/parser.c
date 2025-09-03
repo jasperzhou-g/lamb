@@ -68,6 +68,57 @@ static struct AST* parse_unary(struct Parser* ps);
 static struct AST* parse_app(struct Parser* ps);
 static struct AST* parse_abs(struct Parser* ps);
 static struct AST* parse_expr(struct Parser* ps);
+static struct AST* parse_binding(struct Parser* ps);
+
+static struct AST* parse_binding(struct Parser* ps) {
+    if (!ps_match(ps, TOK_LET)) { // should never be reached
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line, 
+                string_create("Expected 'let' keyword.")
+            )
+        );
+    }
+    if (!ps_match(ps, TOK_IDENTIFIER)) {
+        return make_err(
+            err_line_pref(
+                ps->prev->t.line, 
+                string_create("Expected identifier after 'let'.")
+            )
+        );
+    }
+    struct Token id_tok = ps_prev(ps);
+    struct String id_tok_str = string_ncreate(ps->src + id_tok.str_start, id_tok.str_end - id_tok.str_start);
+    struct AST* value = parse_expr(ps);
+    if (value->tag == AST_ERR) {
+        free_ast(value);
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line,
+                string_create("Expected valid <expr> to be bound after let ...'")
+            )
+        );
+    }
+    if (!ps_match(ps, TOK_IN)) {
+        return make_err(
+            err_line_pref(
+                ps->prev->t.line, 
+                string_create("Expected 'in' keyword.")
+            )
+        );
+    }
+    struct AST* expr = parse_expr(ps);
+    if (expr->tag == AST_ERR) {
+        free_ast(expr);
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line,
+                string_create("Expected valid <expr> in 'let ... = ... in <expr>.'")
+            )
+        );
+    }
+    return make_binding(id_tok_str, value, expr);
+}
 
 static struct AST* parse_unary(struct Parser* ps) {
     if (ps_match(ps, TOK_IDENTIFIER)) {
@@ -91,13 +142,13 @@ static struct AST* parse_unary(struct Parser* ps) {
                 )
             );
         }
+        string_free(&num_str);
         return make_num(val); //TODO Read number
     } else if (ps_match(ps, TOK_LEFT_PAREN)) {
         struct AST* expr = parse_expr(ps);
         if (expr->tag == AST_ERR) return expr;
         if (!ps_match(ps, TOK_RIGHT_PAREN)) {
             free_ast(expr);
-
             return make_err(
                 err_line_pref(
                     ps->tokens->t.line, 
@@ -131,6 +182,8 @@ static struct AST* parse_expr(struct Parser* ps) {
     static struct AST* expr = NULL;
     if (ps->tokens->t.type == TOK_FN) {
         expr = parse_abs(ps);
+    } else if (ps->tokens->t.type == TOK_LET) {
+        expr = parse_binding(ps);
     } else {
         expr = parse_app(ps);
     }
@@ -169,7 +222,10 @@ static struct AST* parse_app(struct Parser *ps) {
     struct AST* unary = parse_unary(ps);
     if (unary->tag == AST_ERR) 
         return unary;
-    struct AST* alist = NULL;
+    if (ps_peek(ps).type != TOK_LEFT_PAREN) 
+        return unary;
+    struct AST* alist = cons_alist(NULL, NULL);
+    struct AST* curr = alist;
     while (ps_match(ps, TOK_LEFT_PAREN)) {
         struct AST* arg = parse_expr(ps);
         if (arg->tag == AST_ERR) {
@@ -187,7 +243,10 @@ static struct AST* parse_app(struct Parser *ps) {
                 )
             );
         }
-        alist = cons_alist(arg, alist);
+        curr->u.app_list.arg = arg;
+        if (ps_peek(ps).type != TOK_LEFT_PAREN) break;
+        curr->u.app_list.next = cons_alist(NULL, NULL);
+        curr = curr->u.app_list.next;
     }
     return make_app(unary, alist);
 }

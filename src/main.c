@@ -50,7 +50,6 @@ int main(int argc, char **argv) {
     
     struct Parser* parser_state = parser_init(tl, source);
     struct AST* ast = parse(parser_state);
-    pprint_ast(ast);
 
     struct Interpreter lambterpreter = {
         .empty = NULL

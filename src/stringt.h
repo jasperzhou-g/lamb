@@ -11,6 +11,7 @@ struct String {
 struct String string_create(const char* cstr);
 struct String string_ncreate(const char* cstr, unsigned int len);
 struct String string_concat(struct String a, struct String b);
+struct String string_clone(struct String s);
 struct String string_from_n(unsigned int n);
 int string_compare(struct String a, struct String b);
 void string_free(struct String* s); 

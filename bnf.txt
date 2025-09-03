@@ -1,4 +1,5 @@
-<expr> ::= <abs> | <app>
+<expr> ::= <abs> | <app> | <bind>
+<bind> ::= "let" VAR "=" <expr> "in" <expr>
 <abs> ::= "fn" VAR <expr>
 <app> ::= <unary> { "(" <expr> ")"}*
 <unary> ::= "+" <unary> | | "-" <unary> | <primary>;
