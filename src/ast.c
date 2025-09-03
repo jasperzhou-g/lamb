@@ -29,6 +29,16 @@ static void pprint_ast_helper(struct AST* ast) {
             pprint_ast_helper(ast->u.succ.arg);
             printf(")");
             break;
+        case AST_NEG:
+            printf("(>");
+            pprint_ast_helper(ast->u.pos.arg);
+            printf(")");
+            break;
+        case AST_POS:
+            printf("(<");
+            pprint_ast_helper(ast->u.pos.arg);
+            printf(")");
+            break;
         case AST_DEC:
             printf("(-");
             pprint_ast_helper(ast->u.succ.arg);
@@ -129,6 +139,20 @@ struct AST* make_succ(struct AST* arg) {
     return ast;
 }
 
+struct AST* make_pos(struct AST* arg) {
+    struct AST* ast = malloc(sizeof(struct AST));
+    ast->tag = AST_POS;
+    ast->u.pos.arg = arg;
+    return ast;
+}
+
+struct AST* make_neg(struct AST* arg) {
+    struct AST* ast = malloc(sizeof(struct AST));
+    ast->tag = AST_NEG;
+    ast->u.neg.arg = arg;
+    return ast;
+}
+
 struct AST* make_dec(struct AST* arg) {
     struct AST* ast = malloc(sizeof(struct AST));
     ast->tag = AST_DEC;
@@ -184,6 +208,12 @@ void free_ast(struct AST* ast) {
             break;
         case AST_SUCC:
             free_ast(ast->u.succ.arg);
+            break;
+        case AST_POS:
+            free_ast(ast->u.pos.arg);
+            break;
+        case AST_NEG:
+            free_ast(ast->u.neg.arg);
             break;
         case AST_IDENTIFIER:
             string_free(&ast->u.identifier.name);

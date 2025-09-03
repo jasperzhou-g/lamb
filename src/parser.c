@@ -276,6 +276,14 @@ static struct AST* parse_unary(struct Parser* ps) {
         struct AST* inner = parse_unary(ps);
         if (inner->tag == AST_ERR) return inner;
         return make_dec(inner);
+    } else if (ps_match(ps, TOK_GEQ)) {
+        struct AST* inner = parse_unary(ps);
+        if (inner->tag == AST_ERR) return inner;
+        return make_neg(inner);
+    } else if (ps_match(ps, TOK_LEQ)) {
+        struct AST* inner = parse_unary(ps);
+        if (inner->tag == AST_ERR) return inner;
+        return make_pos(inner);
     }
     return make_err(
         err_line_pref(

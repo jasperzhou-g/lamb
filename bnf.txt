@@ -5,5 +5,5 @@
 <abs> ::= "fn" VAR <expr>
 <app> ::= <unary> { "(" <expr> ")"}*
 
-<unary> ::= "+" <unary> | | "-" <unary> | <primary>;
+<unary> ::= {"+"|"-"|">"|"<"} <unary> | <primary>;
 <primary> ::= NUM | VAR | "(" <expr> ")";

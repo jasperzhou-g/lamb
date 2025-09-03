@@ -357,6 +357,32 @@ static struct LambObject* eval_succ(struct Interpreter* state, struct AST* succ,
     return make_lamb_err(string_create("[type error] + applied to a non-Num argument."));
 }
 
+static struct LambObject* eval_is_pos(struct Interpreter* state, struct AST* succ, struct Environment* env) {
+    printf("[eval_is_pos] "); pprint_ast(succ);
+    struct LambObject* succ_num = eval_expr(state, succ->u.succ.arg, env);
+    rc_use(&succ_num->rc);
+    if (succ_num->type == LOBJ_NUM) {
+        int n = *(int*)succ_num->obj;
+        rc_release(&succ_num->rc, (void**) &succ_num);
+        return make_lamb_num(n>0);
+    }
+    rc_release(&succ_num->rc, (void**) &succ_num);
+    return make_lamb_err(string_create("[type error] + applied to a non-Num argument."));
+}
+
+static struct LambObject* eval_is_neg(struct Interpreter* state, struct AST* succ, struct Environment* env) {
+    printf("[eval_is_neg] "); pprint_ast(succ);
+    struct LambObject* succ_num = eval_expr(state, succ->u.succ.arg, env);
+    rc_use(&succ_num->rc);
+    if (succ_num->type == LOBJ_NUM) {
+        int n = *(int*)succ_num->obj;
+        rc_release(&succ_num->rc, (void**) &succ_num);
+        return make_lamb_num(n<0);
+    }
+    rc_release(&succ_num->rc, (void**) &succ_num);
+    return make_lamb_err(string_create("[type error] + applied to a non-Num argument."));
+}
+
 static struct LambObject* eval_dec(struct Interpreter* state, struct AST* succ, struct Environment* env) {
     printf("[eval_dec] "); pprint_ast(succ);
     struct LambObject* dec_num = eval_expr(state, succ->u.succ.arg, env);
@@ -415,6 +441,10 @@ struct LambObject* eval_expr(struct Interpreter* state, struct AST* expr, struct
             return eval_succ(state, expr, env);
         case AST_DEC:
             return eval_dec(state, expr, env);
+        case AST_NEG:
+            return eval_is_neg(state, expr, env);
+        case AST_POS:
+            return eval_is_pos(state, expr, env);
         case AST_ABS:
             return eval_abs(state, expr, env);
         case AST_IDENTIFIER:

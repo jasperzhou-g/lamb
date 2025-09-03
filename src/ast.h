@@ -12,6 +12,8 @@ enum ASTType {
     AST_LET_IN,
     AST_LETREC,
     AST_IF_ELSE,
+    AST_POS,
+    AST_NEG,
     AST_ERR,
 };
 
@@ -27,6 +29,8 @@ struct AST {
         struct {int value; } num;
         struct {struct AST* arg; } succ;
         struct {struct AST* arg; } dec;
+        struct {struct AST* arg; } neg;
+        struct {struct AST* arg; } pos;
         struct {struct String error_message; } err;
         struct {struct String id; struct AST* value; struct AST* expr; } binding; //syntactic sugar for (fn id expr)(value)
         struct {struct String id; struct AST* fn; struct AST* expr; } letrec;        
@@ -42,6 +46,8 @@ struct AST* make_num(int value);
 struct AST* make_cond(struct AST* cond, struct AST* then_branch, struct AST* else_branch);
 struct AST* make_succ(struct AST* arg);
 struct AST* make_dec(struct AST* arg);
+struct AST* make_pos(struct AST* arg);
+struct AST* make_neg(struct AST* arg);
 struct AST* make_err(struct String error_message);
 struct AST* make_binding(struct String id, struct AST* value, struct AST* expr);
 struct AST* make_letrec(struct String id, struct AST* fn, struct AST* expr);

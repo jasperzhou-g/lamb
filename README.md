@@ -40,10 +40,14 @@ let this_is_5 p(snd) in
 
 ### First class objects: fixnum32 numbers and functions
 
-#### increment/decrement
+#### unary operators on numbers
 `+1 # evaluates to 2`
 
 `-4 # evaluates to 3`
+
+`'>1' # evaluates to 0 (is negative operator)`
+
+`'<5' # evaluates to 1 (is positive operator)`
 
 #### lambda abstraction/application
 `(fn x ++x)(3) # evaluates to 5`
