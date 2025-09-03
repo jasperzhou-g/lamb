@@ -58,6 +58,15 @@ static void pprint_ast_helper(struct AST* ast) {
             pprint_ast_helper(ast->u.binding.expr);
             printf(")");
             break;
+        case AST_IF_ELSE:
+            printf("(if ");
+            pprint_ast_helper(ast->u.if_else.cond);
+            printf(" then ");
+            pprint_ast_helper(ast->u.if_else.then_branch);
+            printf(" else ");
+            pprint_ast_helper(ast->u.if_else.else_branch);
+            printf(")");
+            break;
         default:
             fprintf(stderr, "lamb: err: [pprint_ast_helper] Unknown AST type.\n");
     }
@@ -88,6 +97,15 @@ struct AST* make_identifier(struct String name) {
     struct AST* ast = malloc(sizeof(struct AST));
     ast->tag = AST_IDENTIFIER;
     ast->u.identifier.name = name;
+    return ast;
+}
+
+struct AST* make_cond(struct AST* cond, struct AST* then_branch, struct AST* else_branch) {
+    struct AST* ast = malloc(sizeof(struct AST));
+    ast->tag = AST_IF_ELSE;
+    ast->u.if_else.cond = cond;
+    ast->u.if_else.then_branch = then_branch;
+    ast->u.if_else.else_branch = else_branch;
     return ast;
 }
 
@@ -169,6 +187,11 @@ void free_ast(struct AST* ast) {
             string_free(&ast->u.binding.id);
             free_ast(ast->u.binding.value);
             free_ast(ast->u.binding.expr);
+            break;
+        case AST_IF_ELSE:
+            free_ast(ast->u.if_else.cond);
+            free_ast(ast->u.if_else.then_branch);
+            free_ast(ast->u.if_else.else_branch);
             break;
         default:
             fprintf(stderr, "lamb: err: [free_ast] Unknown AST type.\n");

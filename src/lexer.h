@@ -20,7 +20,7 @@ enum TokenType {
     TOK_IDENTIFIER,
 
     // Keywords
-    TOK_FIX, TOK_LETREC, TOK_LET, TOK_IN, TOK_BE, TOK_FN, TOK_IF, TOK_ELSE,
+    TOK_FIX, TOK_LETREC, TOK_LET, TOK_IN, TOK_BE, TOK_FN, TOK_IF, TOK_ELSE, TOK_THEN,
 
     // Literals
     TOK_NUMBER,

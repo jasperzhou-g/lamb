@@ -1,7 +1,7 @@
 <expr> ::= <abs> | <app> | <bind> | <conditional>
+<conditional> ::= "if" <expr> then <expr> else <expr>
 <bind> ::= "let" VAR "=" <expr> "in" <expr>
 <abs> ::= "fn" VAR <expr>
-<conditional> ::= if <expr> else <expr>
 <app> ::= <unary> { "(" <expr> ")"}*
 <unary> ::= "+" <unary> | | "-" <unary> | <primary>;
 <primary> ::= NUM | VAR | "(" <expr> ")";

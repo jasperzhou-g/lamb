@@ -366,6 +366,23 @@ static struct LambObject* eval_let(struct Interpreter* state, struct AST* expr, 
     return eval_expr(state, expr->u.binding.expr, new_env);
 }
 
+static struct LambObject* eval_if_else(struct Interpreter* state, struct AST* expr, struct Environment* env) {
+    printf("[eval_if_else] "); pprint_ast(expr);
+    struct LambObject* cond = eval_expr(state, expr->u.if_else.cond, env);
+    rc_use(&cond->rc);
+    if (cond->type == LOBJ_ERR) { 
+        return cond;
+    } else if (cond->type != LOBJ_NUM) {
+        return make_lamb_err(string_create("[type error] - tried to use a non-Num condition in if-else expression."));
+    }
+    if (*(int*)cond->obj) {
+        rc_release(&cond->rc, (void**)&cond);
+        return eval_expr(state, expr->u.if_else.then_branch, env);
+    }
+    rc_release(&cond->rc, (void**)&cond);
+    return eval_expr(state, expr->u.if_else.else_branch, env);
+}
+
 struct LambObject* eval_expr(struct Interpreter* state, struct AST* expr, struct Environment* env) {
     switch (expr->tag) {
         struct LambObject* lo;
@@ -385,6 +402,8 @@ struct LambObject* eval_expr(struct Interpreter* state, struct AST* expr, struct
             return make_lamb_err(string_concat(string_create("[run-time error] attempted to use an undefined name: "), string_clone(expr->u.identifier.name)));
         case AST_LET_IN:
             return eval_let(state, expr, env);
+        case AST_IF_ELSE:
+            return eval_if_else(state, expr, env);
         case AST_ERR:
             printf("%s\n", expr->u.err.error_message.b);
             return NULL;
@@ -402,7 +421,10 @@ void interpret(struct Interpreter* state, struct AST* program) {
     struct Environment *global = env_create(NULL);
     rc_use(&global->rc);
     struct LambObject* val = eval_expr(state, program, global);
-    if (!val) return;
+    if (!val) {
+        rc_release(&global->rc, (void**) &global);
+        return;
+    }
     rc_use(&val->rc);
     printf("> ");
     switch (val->type) {

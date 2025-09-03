@@ -10,7 +10,8 @@ enum ASTType {
     AST_NUM,
     AST_SUCC, AST_DEC, // operators
     AST_LET_IN,
-    AST_ERR
+    AST_IF_ELSE,
+    AST_ERR,
 };
 
 struct AST;
@@ -27,14 +28,16 @@ struct AST {
         struct {struct AST* arg; } dec;
         struct {struct String error_message; } err;
         struct {struct String id; struct AST* value; struct AST* expr; } binding; //syntactic sugar for (fn id expr)(value)
+        struct {struct AST* cond; struct AST* then_branch; struct AST* else_branch;} if_else;
     } u;
 };
 void pprint_ast(struct AST* ast);
 struct AST* make_abs(struct AST* id, struct AST* body);
 struct AST* make_app(struct AST* fn, struct AST* alist);
-struct AST* cons_alist(struct AST* arg, struct AST* next);
+struct AST* cons_alist(struct AST* arg, struct AST* next); //bruh
 struct AST* make_identifier(struct String name);
 struct AST* make_num(int value);
+struct AST* make_cond(struct AST* cond, struct AST* then_branch, struct AST* else_branch);
 struct AST* make_succ(struct AST* arg);
 struct AST* make_dec(struct AST* arg);
 struct AST* make_err(struct String error_message);

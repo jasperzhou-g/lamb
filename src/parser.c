@@ -69,6 +69,65 @@ static struct AST* parse_app(struct Parser* ps);
 static struct AST* parse_abs(struct Parser* ps);
 static struct AST* parse_expr(struct Parser* ps);
 static struct AST* parse_binding(struct Parser* ps);
+static struct AST* parse_cond(struct Parser* ps);
+
+static struct AST* parse_cond(struct Parser* ps) {
+    if (!ps_match(ps, TOK_IF)) {
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line, 
+                string_create("Expected 'if' keyword.")
+            )
+        );
+    } 
+    struct AST* cond = parse_expr(ps);
+    if (cond->tag == AST_ERR) {
+        free_ast(cond);
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line,
+                string_create("Expected valid <expr> after 'if'")
+            )
+        );
+    }
+    if (!ps_match(ps, TOK_THEN)) {
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line, 
+                string_create("Expected 'then' keyword.")
+            )
+        );
+    } 
+    struct AST* then_value = parse_expr(ps);
+    if (cond->tag == AST_ERR) {
+        free_ast(cond);
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line,
+                string_create("Expected valid <expr> after 'if' ... 'then'")
+            )
+        );
+    }
+    if (!ps_match(ps, TOK_ELSE)) {
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line, 
+                string_create("Expected 'else' keyword.")
+            )
+        );
+    }
+    struct AST* else_value = parse_expr(ps);
+    if (cond->tag == AST_ERR) {
+        free_ast(cond);
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line,
+                string_create("Expected valid <expr> after 'if' ... 'then' ...")
+            )
+        );
+    }
+    return make_cond(cond, then_value, else_value);
+}
 
 static struct AST* parse_binding(struct Parser* ps) {
     if (!ps_match(ps, TOK_LET)) { // should never be reached
@@ -180,10 +239,12 @@ static struct AST* parse_expr(struct Parser* ps) {
     if (!ps) return NULL;
     if (!ps->tokens) return NULL; //
     static struct AST* expr = NULL;
-    if (ps->tokens->t.type == TOK_FN) {
+    if (ps_check(ps, TOK_FN)) {
         expr = parse_abs(ps);
-    } else if (ps->tokens->t.type == TOK_LET) {
+    } else if (ps_check(ps, TOK_LET)) {
         expr = parse_binding(ps);
+    } else if (ps_check(ps, TOK_IF)) {
+        expr = parse_cond(ps);
     } else {
         expr = parse_app(ps);
     }
