@@ -3,9 +3,9 @@
 Tree-walk interpreter for a call-by-value simple functional language inspired by core ML features.
 A program evaluates to a function or a number.
 
-# Interesting example programs:
+# Interesting things you can make with it:
 
-Recursion without recursion (using the Z combinator)
+Recursion without built-in recursion (using the Z combinator)
 ```
 let Z
     fn g (fn r g(fn y r(r)(y)))(fn r g(fn y r(r)(y))) # Z combinator
@@ -13,7 +13,7 @@ in
 let my_add 
     fn f fn x fn y if y then f(+x)(-y) else x
 in 
-Z(my_add)(5)(4)
+Z(my_add)(5)(4) # evaluates to 9
 ```
 
 Closures as a poor man's Object (encoding data structures)
