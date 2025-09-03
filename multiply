@@ -1,0 +1,6 @@
+letrec add
+    fn x fn y if y then add(+x)(-y) else x
+in
+letrec multiply
+    fn x fn y if y then add(x)(multiply(x)(-y)) else 0
+in multiply(3)(9)

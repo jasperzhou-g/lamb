@@ -151,6 +151,7 @@ static void release_lo(void *lo) {
 
 void pprint_env(struct Environment* env) {
     if (!env) return;
+    if (!getenv("DEBUG")) return;
     pprint_env(env->enclosing);
     printf("\t");
     for (int i = 0; i < env->values->len_buckets; i++) {
@@ -276,7 +277,7 @@ static struct LambObject* closure_call(struct Interpreter* state, struct LambObj
     rc_use(&arg->rc);
     struct Environment* new_env = env_create(cl->env);
     rc_use(&new_env->rc);
-    env_put(new_env, cl->param, arg);
+    env_put(new_env, string_clone(cl->param), arg);
     struct LambObject* result = eval_expr(state, cl->code->u.abs.body, new_env);
     rc_release(&new_env->rc, (void**) &new_env);
     rc_release(&arg->rc, (void**) &arg);
@@ -284,7 +285,10 @@ static struct LambObject* closure_call(struct Interpreter* state, struct LambObj
 }
 
 static struct LambObject* eval_letrec(struct Interpreter* state, struct AST* expr, struct Environment* env)  {
-    printf("[eval_letrec] "); pprint_ast(expr);
+    if (getenv("DEBUG")) {
+        printf("[eval_letrec] "); 
+        pprint_ast(expr);
+    }
     rc_use(&env->rc);
     struct LambObject* fn = eval_expr(state, expr->u.letrec.fn, env);
     struct LambClosure* fn_cl = fn->obj;
@@ -306,8 +310,11 @@ static struct LambObject* eval_letrec(struct Interpreter* state, struct AST* exp
 
 static struct LambObject* eval_app(struct Interpreter* state, struct AST* expr, struct Environment* env) {
     // TODO: Fix quite severe memory leak (reference counting problem).
-    // Otherwise, LGTM
-    printf("[eval_app] "); pprint_ast(expr);
+    // Otherwise,LGTM
+    if (getenv("DEBUG")) {
+        printf("[eval_app] "); 
+        pprint_ast(expr);
+    } 
     rc_use(&env->rc);
     if (!expr->u.app.alist) {
         rc_release(&env->rc, (void**) &env);
@@ -376,7 +383,10 @@ static struct LambObject* eval_app(struct Interpreter* state, struct AST* expr, 
 }
 
 static struct LambObject* eval_abs(struct Interpreter* state, struct AST* abs, struct Environment* env) {
-    printf("[eval_abs] "); pprint_ast(abs);
+    if (getenv("DEBUG")) {
+        printf("[eval_abs] "); 
+        pprint_ast(abs);
+    }
     if (abs->tag != AST_ABS) {
         return make_lamb_err(string_create("[run-time error] expected a function expression."));
     }
@@ -388,12 +398,18 @@ static struct LambObject* eval_abs(struct Interpreter* state, struct AST* abs, s
 }
 
 static struct LambObject* eval_num(struct Interpreter* state, struct AST* num, struct Environment* env) {
-    printf("[eval_num] "); pprint_ast(num);
+    if (getenv("DEBUG")) {
+        printf("[eval_num] "); 
+        pprint_ast(num);
+    }
     return make_lamb_num(num->u.num.value);
 }
 
 static struct LambObject* eval_succ(struct Interpreter* state, struct AST* succ, struct Environment* env) {
-    printf("[eval_succ] "); pprint_ast(succ);
+    if (getenv("DEBUG")) {
+        printf("[eval_succ] "); 
+        pprint_ast(succ);
+    }
     struct LambObject* succ_num = eval_expr(state, succ->u.succ.arg, env);
     rc_use(&succ_num->rc);
     if (succ_num->type == LOBJ_NUM) {
@@ -406,7 +422,10 @@ static struct LambObject* eval_succ(struct Interpreter* state, struct AST* succ,
 }
 
 static struct LambObject* eval_is_pos(struct Interpreter* state, struct AST* succ, struct Environment* env) {
-    printf("[eval_is_pos] "); pprint_ast(succ);
+    if (getenv("DEBUG")) {
+        printf("[eval_is_pos] "); 
+        pprint_ast(succ);
+    }
     struct LambObject* succ_num = eval_expr(state, succ->u.succ.arg, env);
     rc_use(&succ_num->rc);
     if (succ_num->type == LOBJ_NUM) {
@@ -419,7 +438,10 @@ static struct LambObject* eval_is_pos(struct Interpreter* state, struct AST* suc
 }
 
 static struct LambObject* eval_is_neg(struct Interpreter* state, struct AST* succ, struct Environment* env) {
-    printf("[eval_is_neg] "); pprint_ast(succ);
+    if (getenv("DEBUG")) {
+        printf("[eval_is_neg] "); 
+        pprint_ast(succ);
+    }
     struct LambObject* succ_num = eval_expr(state, succ->u.succ.arg, env);
     rc_use(&succ_num->rc);
     if (succ_num->type == LOBJ_NUM) {
@@ -432,7 +454,10 @@ static struct LambObject* eval_is_neg(struct Interpreter* state, struct AST* suc
 }
 
 static struct LambObject* eval_dec(struct Interpreter* state, struct AST* succ, struct Environment* env) {
-    printf("[eval_dec] "); pprint_ast(succ);
+    if (getenv("DEBUG")) {
+        printf("[eval_dec] "); 
+        pprint_ast(succ);
+    }
     struct LambObject* dec_num = eval_expr(state, succ->u.succ.arg, env);
     rc_use(&dec_num->rc);
     if (dec_num->type == LOBJ_NUM) {
@@ -446,7 +471,10 @@ static struct LambObject* eval_dec(struct Interpreter* state, struct AST* succ, 
 
 static struct LambObject* eval_let(struct Interpreter* state, struct AST* expr, struct Environment* env) {
     // let x = y in z === (fn x z)(y)
-    printf("[eval_let] "); pprint_ast(expr);
+    if (getenv("DEBUG")) {
+        printf("[eval_let] "); 
+        pprint_ast(expr);
+    }
     rc_use(&env->rc);
     struct LambObject* val = eval_expr(state, expr->u.binding.value, env);
     if (val->type == LOBJ_ERR) {
@@ -462,7 +490,10 @@ static struct LambObject* eval_let(struct Interpreter* state, struct AST* expr, 
 }
 
 static struct LambObject* eval_if_else(struct Interpreter* state, struct AST* expr, struct Environment* env) {
-    printf("[eval_if_else] "); pprint_ast(expr);
+    if (getenv("DEBUG")) {
+        printf("[eval_if_else] "); 
+        pprint_ast(expr);
+    }    
     struct LambObject* cond = eval_expr(state, expr->u.if_else.cond, env);
     rc_use(&cond->rc);
     if (cond->type == LOBJ_ERR) { 
@@ -519,7 +550,12 @@ EVALUATION FUNCTIONS END
 */
 
 void interpret(struct Interpreter* state, struct AST* program) {
-    if (program->tag != AST_ERR) { printf("program repr: "); pprint_ast(program);}
+    if (!getenv("DEBUG")) {
+        printf("DEBUG env not set; skipping evaluation and stack frame logging.\n");
+    } else {
+        printf("DEBUG env set; skipping debug and stack frame logging.\n");
+    }
+    if (program->tag != AST_ERR) { printf("program repr:\n"); pprint_ast(program);}
     struct Environment *global = env_create(NULL);
     rc_use(&global->rc);
     struct LambObject* val = eval_expr(state, program, global);
