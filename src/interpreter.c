@@ -83,7 +83,8 @@ void hashmap_free(struct HashMap* hm, void (*value_free)(void*)) {
         while (curr) {
             struct HashMapBucket* to_free = curr;
             curr = curr->next;
-            // TODO: this leaks memory (string and value) pls fix
+            // TODO: this leaks strings, please fix
+            value_free(to_free);
             free(to_free);
         }
     }
@@ -128,11 +129,17 @@ void env_put(struct Environment* env, struct String key, struct LambObject* val)
     hashmap_put(env->values, key, val);
 }
 
+static void release_lo(void *lo) {
+    struct LambObject* lobj = lo;
+    if (!lobj) return;
+    rc_release(&lobj->rc, (void**) &lobj);
+}
+
 void env_free(void* env) {
     struct Environment* env_obj = env;
     if (!env_obj) return;
     if (env_obj->enclosing) rc_release(&env_obj->enclosing->rc, (void**) &env_obj->enclosing);
-    hashmap_free(env_obj->values, free);
+    hashmap_free(env_obj->values, release_lo);
     free(env_obj);
 }
 
@@ -225,7 +232,7 @@ struct LambObject* eval_expr(struct Interpreter* state, struct AST* expr, struct
 
 static struct LambObject* closure_call(struct Interpreter* state, struct LambObject* closure, struct LambObject* arg) {
     if (closure->type != LOBJ_CLOSURE) {
-        return make_lamb_err(string_create("[run-time error]: A non-function was applied."));
+        return make_lamb_err(string_create("[run-time error]: tried to apply something that's not a function"));
     }
     struct LambClosure* cl = closure->obj;
     rc_use(&cl->env->rc);
@@ -238,7 +245,9 @@ static struct LambObject* closure_call(struct Interpreter* state, struct LambObj
 }
 
 static struct LambObject* eval_app(struct Interpreter* state, struct AST* expr, struct Environment* env) {
-    // printf("eval_app\n");
+    // TODO: Fix quite severe memory leak (reference counting problem).
+    // Otherwise, LGTM
+    printf("[eval_app] "); pprint_ast(expr);
     rc_use(&env->rc);
     if (!expr->u.app.alist) {
         rc_release(&env->rc, (void**) &env);
@@ -250,7 +259,7 @@ static struct LambObject* eval_app(struct Interpreter* state, struct AST* expr, 
             return arg;
         }
         rc_use(&arg->rc);
-        struct LambObject* cl_obj = eval_abs(state, expr->u.app.fn, env);
+        struct LambObject* cl_obj = eval_expr(state, expr->u.app.fn, env);
         if (cl_obj->type == LOBJ_ERR) {
             rc_release(&arg->rc, (void**) &arg);
             rc_release(&env->rc, (void**) &env);
@@ -264,12 +273,16 @@ static struct LambObject* eval_app(struct Interpreter* state, struct AST* expr, 
         return result;
     }
     struct AST* alist = expr->u.app.alist;
-    struct LambObject* cl_obj = eval_abs(state, expr->u.app.fn, env);
+    struct LambObject* cl_obj = eval_expr(state, expr->u.app.fn, env);
     if (cl_obj->type == LOBJ_ERR) {
         rc_release(&env->rc, (void**) &env);
         return cl_obj;
-    }
+    } 
     for (;;) {
+        if (cl_obj->type != LOBJ_CLOSURE) {
+            rc_release(&env->rc, (void**) &env);
+            return make_lamb_err(string_create("[type error] Expected a function to be applied"));
+        }
         struct LambObject* arg_obj = eval_expr(state, alist->u.app_list.arg, env);
         if (arg_obj->type == LOBJ_ERR) {
             rc_release(&env->rc, (void**) &env);
@@ -294,8 +307,9 @@ static struct LambObject* eval_app(struct Interpreter* state, struct AST* expr, 
 }
 
 static struct LambObject* eval_abs(struct Interpreter* state, struct AST* abs, struct Environment* env) {
+    printf("[eval_abs] "); pprint_ast(abs);
     if (abs->tag != AST_ABS) {
-        return make_lamb_err(string_create("error: A non-function was applied."));
+        return make_lamb_err(string_create("[run-time error] expected a function expression."));
     }
     rc_use(&env->rc);
     struct Environment* new_env = env_create(env);
@@ -306,12 +320,12 @@ static struct LambObject* eval_abs(struct Interpreter* state, struct AST* abs, s
 }
 
 static struct LambObject* eval_num(struct Interpreter* state, struct AST* num, struct Environment* env) {
-    // printf("eval_num\n");
+    printf("[eval_num] "); pprint_ast(num);
     return make_lamb_num(num->u.num.value);
 }
 
 static struct LambObject* eval_succ(struct Interpreter* state, struct AST* succ, struct Environment* env) {
-    // printf("eval_succ\n");
+    printf("[eval_succ] "); pprint_ast(succ);
     struct LambObject* succ_num = eval_expr(state, succ->u.succ.arg, env);
     rc_use(&succ_num->rc);
     if (succ_num->type == LOBJ_NUM) {
@@ -324,7 +338,7 @@ static struct LambObject* eval_succ(struct Interpreter* state, struct AST* succ,
 }
 
 static struct LambObject* eval_dec(struct Interpreter* state, struct AST* succ, struct Environment* env) {
-    // printf("eval_dec\n");
+    printf("[eval_dec] "); pprint_ast(succ);
     struct LambObject* dec_num = eval_expr(state, succ->u.succ.arg, env);
     rc_use(&dec_num->rc);
     if (dec_num->type == LOBJ_NUM) {
@@ -336,12 +350,24 @@ static struct LambObject* eval_dec(struct Interpreter* state, struct AST* succ, 
     return make_lamb_err(string_create("[type error] - applied to a non-Num argument."));
 }
 
-static struct LambObject* eval_let(struct Interpreter* state, struct AST* succ, struct Environment* env) {
+static struct LambObject* eval_let(struct Interpreter* state, struct AST* expr, struct Environment* env) {
     // let x = y in z === (fn x z)(y)
+    printf("[eval_let] "); pprint_ast(expr);
+    rc_use(&env->rc);
+    struct LambObject* val = eval_expr(state, expr->u.binding.value, env);
+    if (val->type == LOBJ_ERR) {
+        rc_release(&env->rc, (void**) &env);
+        return val;
+    }
+    rc_use(&val->rc);
+    struct Environment* new_env = env_create(env);
+    env_put(new_env, string_clone(expr->u.binding.id), val);
+    rc_release(&val->rc, (void**) &val);
+    rc_release(&env->rc, (void**) &env);
+    return eval_expr(state, expr->u.binding.expr, new_env);
 }
 
 struct LambObject* eval_expr(struct Interpreter* state, struct AST* expr, struct Environment* env) {
-    // printf("eval_expr\n");
     switch (expr->tag) {
         struct LambObject* lo;
         case AST_APP:
@@ -357,7 +383,9 @@ struct LambObject* eval_expr(struct Interpreter* state, struct AST* expr, struct
         case AST_IDENTIFIER:
             lo = env_get(env, expr->u.identifier.name);
             if (lo) return lo;
-            return make_lamb_err(string_create("[run-time error] Found an unbound variable"));
+            return make_lamb_err(string_concat(string_create("[run-time error] attempted to use an undefined name: "), string_clone(expr->u.identifier.name)));
+        case AST_LET_IN:
+            return eval_let(state, expr, env);
         default:
             printf("%d\n", expr->tag);
             assert(0);
@@ -369,11 +397,12 @@ EVALUATION FUNCTIONS END
 */
 
 void interpret(struct Interpreter* state, struct AST* program) {
-    pprint_ast(program);
+    printf("program repr: "); pprint_ast(program);
     struct Environment *global = env_create(NULL);
     rc_use(&global->rc);
     struct LambObject* val = eval_expr(state, program, global);
     rc_use(&val->rc);
+    printf("> ");
     switch (val->type) {
         case LOBJ_NUM:
             printf("%d\n", *(int*)val->obj);
@@ -382,7 +411,8 @@ void interpret(struct Interpreter* state, struct AST* program) {
             printf("%s\n", (*(struct String*)val->obj).b);
             break;
         case LOBJ_CLOSURE:
-            printf("Closure\n");
+            printf("Closure (pretty printed): ");
+            pprint_ast(((struct LambClosure*)val->obj)->code);
             break;
     }
     rc_release(&val->rc, (void**) &val);
