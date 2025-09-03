@@ -3,6 +3,15 @@
 Tree-walk interpreter for a call-by-value simple functional language inspired by core ML features.
 A program evaluates to a function or a number.
 
+## Build instructions and example usage:
+```
+mkdir build
+make
+# for debug logs and interpreter state peeking (stack frames, eval steps)
+# export DEBUG=1
+./build/lamb sample_programs/multiply.code
+```
+
 ## About the Language
 ### Interesting things you can make with it:
 
@@ -58,7 +67,8 @@ let this_is_5 p(snd) in
 ### bindings
 `let x 5 in ++x # evaluates to 7`
 
-A more interesting example, which shows the use of closures, currying and recursion to define addition, which is not built into the language
+Although things like multiple function arguments or addition are not built in,
+you can define them like such:
 
 ```
 letrec my_add 

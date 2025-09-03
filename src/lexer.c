@@ -158,6 +158,7 @@ static struct OptionalToken scan_token(struct Lexer* s) {
                 return identifier(s);
             report(s->line, "(in lexer)", "Unexpected character. ");
             printf("%c\n", c);
+            exit(1);
         }
     }
     return create_none_token(s);

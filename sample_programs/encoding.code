@@ -1,0 +1,18 @@
+letrec add
+    fn x fn y if y then add(+x)(-y) else x
+in
+let pair 
+    fn x fn y fn f f(x)(y)
+in 
+let fst 
+    fn x fn y x
+in 
+let snd 
+    fn x fn y y
+in
+let p 
+    pair(1)(5)
+in
+let this_is_1 p(fst) in
+let this_is_5 p(snd) in
+add(this_is_1)(this_is_5)

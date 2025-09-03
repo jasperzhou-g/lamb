@@ -550,12 +550,19 @@ EVALUATION FUNCTIONS END
 */
 
 void interpret(struct Interpreter* state, struct AST* program) {
+    if (program->tag != AST_ERR) { 
+        printf("program repr:\n"); 
+        pprint_ast(program);
+    }
+    else {
+        printf("%s\n", program->u.err.error_message.b);
+        exit(1);
+    }
     if (!getenv("DEBUG")) {
         printf("DEBUG env not set; skipping evaluation and stack frame logging.\n");
     } else {
         printf("DEBUG env set; skipping debug and stack frame logging.\n");
-    }
-    if (program->tag != AST_ERR) { printf("program repr:\n"); pprint_ast(program);}
+    }    
     struct Environment *global = env_create(NULL);
     rc_use(&global->rc);
     struct LambObject* val = eval_expr(state, program, global);

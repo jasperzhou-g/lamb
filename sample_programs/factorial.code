@@ -1,0 +1,9 @@
+letrec add
+    fn x fn y if y then add(+x)(-y) else x
+in 
+letrec mult
+    fn x fn y if y then add(x)(mult(x)(-y)) else 0
+in
+letrec fact
+    fn n if >(-n) then 1 else mult(n)(fact(-n))
+in fact(6)

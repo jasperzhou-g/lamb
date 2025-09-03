@@ -1,0 +1,7 @@
+let Z
+    fn g (fn r g(fn y r(r)(y)))(fn r g(fn y r(r)(y))) # Z combinator
+in 
+let my_add 
+    fn f fn x fn y if y then f(+x)(-y) else x
+in 
+Z(my_add)(5)(4) # evaluates to 9

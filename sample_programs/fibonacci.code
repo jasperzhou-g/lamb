@@ -1,0 +1,10 @@
+letrec add
+    fn x fn y if y then add(+x)(-y) else x
+in
+letrec fib
+    fn n 
+    if n then 
+        if <(-n) then add(fib(-n))(fib(--n))
+        else 1
+    else 0
+in fib(7) # 0, 1, 1, 2, 3, 5, 8, 13
