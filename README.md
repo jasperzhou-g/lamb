@@ -1,4 +1,4 @@
-# YASLC (Yet Another Sugared Lambda Calculus)
+Yet Another Sugared Lambda Calculus
 
 Tree-walk interpreter for a call-by-value simple functional language inspired by core ML features.
 A program evaluates to a function or a number.
