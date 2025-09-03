@@ -3,7 +3,8 @@
 Tree-walk interpreter for a call-by-value simple functional language inspired by core ML features.
 A program evaluates to a function or a number.
 
-# Interesting things you can make with it:
+## About the Language
+### Interesting things you can make with it:
 
 Recursion without built-in recursion (using the Z combinator)
 ```
@@ -35,22 +36,22 @@ let this_is_5 p(snd) in
 ...
 ```
 
-# Language features
+## Language features
 
-## First class objects: fixnum32 numbers and functions
+### First class objects: fixnum32 numbers and functions
 
-### increment/decrement
+#### increment/decrement
 `+1 # evaluates to 2`
 
 `-4 # evaluates to 3`
 
-### lambda abstraction/application
+#### lambda abstraction/application
 `(fn x ++x)(3) # evaluates to 5`
 
-## conditionals
+### conditionals
 `if 5 then 3 else 0 # evaluates to 3`
 
-## bindings
+### bindings
 `let x 5 in ++x # evaluates to 7`
 
 A more interesting example, which shows the use of closures, currying and recursion to define addition, which is not built into the language
@@ -64,7 +65,7 @@ my_add(5)(4) # evaluates to 9
 
 `my_add(5)(4) # evaluates to 9`
 
-## comments
+### comments
 `# hashtags >>>>>>>>>>>> //`
 
 P.S.
