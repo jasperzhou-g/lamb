@@ -70,6 +70,58 @@ static struct AST* parse_abs(struct Parser* ps);
 static struct AST* parse_expr(struct Parser* ps);
 static struct AST* parse_binding(struct Parser* ps);
 static struct AST* parse_cond(struct Parser* ps);
+static struct AST* parse_letrec(struct Parser* ps);
+
+static struct AST* parse_letrec(struct Parser* ps) {
+    // should've just used parse_binding but oh well
+    if (!ps_match(ps, TOK_LETREC)) { // should never be reached
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line, 
+                string_create("Expected 'letrec' keyword.")
+            )
+        );
+    }
+    if (!ps_match(ps, TOK_IDENTIFIER)) {
+        return make_err(
+            err_line_pref(
+                ps->prev->t.line, 
+                string_create("Expected identifier after 'letrec'.")
+            )
+        );
+    }
+    struct Token id_tok = ps_prev(ps);
+    struct String id_tok_str = string_ncreate(ps->src + id_tok.str_start, id_tok.str_end - id_tok.str_start);
+    struct AST* value = parse_expr(ps);
+    if (value->tag == AST_ERR) {
+        free_ast(value);
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line,
+                string_create("Expected valid <expr> to be bound after 'letrec ...'")
+            )
+        );
+    }
+    if (!ps_match(ps, TOK_IN)) {
+        return make_err(
+            err_line_pref(
+                ps->prev->t.line, 
+                string_create("Expected 'in' keyword.")
+            )
+        );
+    }
+    struct AST* expr = parse_expr(ps);
+    if (expr->tag == AST_ERR) {
+        free_ast(expr);
+        return make_err(
+            err_line_pref(
+                ps->tokens->t.line,
+                string_create("Expected valid <expr> in 'let ... = ... in <expr>.'")
+            )
+        );
+    }
+    return make_letrec(id_tok_str, value, expr);
+}
 
 static struct AST* parse_cond(struct Parser* ps) {
     if (!ps_match(ps, TOK_IF)) {
@@ -245,6 +297,8 @@ static struct AST* parse_expr(struct Parser* ps) {
         expr = parse_binding(ps);
     } else if (ps_check(ps, TOK_IF)) {
         expr = parse_cond(ps);
+    } else if (ps_check(ps, TOK_LETREC)) {
+        expr = parse_letrec(ps);
     } else {
         expr = parse_app(ps);
     }

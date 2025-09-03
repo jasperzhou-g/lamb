@@ -244,6 +244,27 @@ static struct LambObject* closure_call(struct Interpreter* state, struct LambObj
     return result;
 }
 
+static struct LambObject* eval_letrec(struct Interpreter* state, struct AST* expr, struct Environment* env)  {
+    printf("[eval_letrec] "); pprint_ast(expr);
+    rc_use(&env->rc);
+    struct LambObject* fn = eval_expr(state, expr->u.letrec.fn, env);
+    struct LambClosure* fn_cl = fn->obj;
+    if (fn->type == LOBJ_ERR) {
+        return fn;
+    } 
+    rc_use(&fn->rc);
+    if (fn->type != LOBJ_CLOSURE) {
+        rc_release(&fn->rc, (void**) &fn);
+        return make_lamb_err(string_create("[type error] Expected a function to be recursively defined in letrec expression"));
+    }
+    env_put(fn_cl->env, string_clone(expr->u.letrec.id), fn);
+    env_put(env, string_clone(expr->u.letrec.id), fn);
+    struct LambObject* result = eval_expr(state, expr->u.letrec.expr, env);
+    rc_release(&fn->rc, (void**) &fn);
+    rc_release(&env->rc, (void**) &env);
+    return result;
+}
+
 static struct LambObject* eval_app(struct Interpreter* state, struct AST* expr, struct Environment* env) {
     // TODO: Fix quite severe memory leak (reference counting problem).
     // Otherwise, LGTM
@@ -384,7 +405,7 @@ static struct LambObject* eval_if_else(struct Interpreter* state, struct AST* ex
 }
 
 struct LambObject* eval_expr(struct Interpreter* state, struct AST* expr, struct Environment* env) {
-    switch (expr->tag) {
+    switch (expr->tag) { //function table?
         struct LambObject* lo;
         case AST_APP:
             return eval_app(state, expr, env);
@@ -404,6 +425,8 @@ struct LambObject* eval_expr(struct Interpreter* state, struct AST* expr, struct
             return eval_let(state, expr, env);
         case AST_IF_ELSE:
             return eval_if_else(state, expr, env);
+        case AST_LETREC:
+            return eval_letrec(state, expr, env);
         case AST_ERR:
             printf("%s\n", expr->u.err.error_message.b);
             return NULL;

@@ -1,7 +1,9 @@
-<expr> ::= <abs> | <app> | <bind> | <conditional>
+<expr> ::= <abs> | <app> | <bind> | <conditional> | <letrec>
+
 <conditional> ::= "if" <expr> then <expr> else <expr>
 <bind> ::= "let" VAR "=" <expr> "in" <expr>
 <abs> ::= "fn" VAR <expr>
 <app> ::= <unary> { "(" <expr> ")"}*
+
 <unary> ::= "+" <unary> | | "-" <unary> | <primary>;
 <primary> ::= NUM | VAR | "(" <expr> ")";

@@ -67,7 +67,7 @@ static void pprint_ast_helper(struct AST* ast) {
             pprint_ast_helper(ast->u.if_else.else_branch);
             break;
         case AST_LETREC:
-            printf("(def %s=", ast->u.letrec.id.b);
+            printf("def %s=", ast->u.letrec.id.b);
             pprint_ast_helper(ast->u.letrec.fn);
             printf(" in (");
             pprint_ast_helper(ast->u.letrec.expr);
@@ -149,6 +149,15 @@ struct AST* make_binding(struct String id, struct AST* value, struct AST* expr) 
     ast->u.binding.id = id;
     ast->u.binding.value = value;
     ast->u.binding.expr = expr;
+    return ast;
+}
+
+struct AST* make_letrec(struct String id, struct AST* fn, struct AST* expr) {
+    struct AST* ast = malloc(sizeof(struct AST));
+    ast->tag = AST_LETREC;
+    ast->u.letrec.id = id;
+    ast->u.letrec.fn = fn;
+    ast->u.letrec.expr = expr;
     return ast;
 }
 
