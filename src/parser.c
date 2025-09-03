@@ -17,7 +17,7 @@ static void debug_tokens(struct Parser* ps) {
 static struct String err_line_pref(unsigned int line, struct String msg) {
     return string_concat(
         string_concat(
-            string_create("error [line "),
+            string_create("syntax error [line "),
             string_concat(
                 string_from_n(line),
                 string_create("]: ")

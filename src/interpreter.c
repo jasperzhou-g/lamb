@@ -313,7 +313,6 @@ static struct LambObject* eval_abs(struct Interpreter* state, struct AST* abs, s
     }
     rc_use(&env->rc);
     struct Environment* new_env = env_create(env);
-    //capture
     struct LambObject* closure = make_lamb_closure(abs, abs->u.abs.id->u.identifier.name, new_env);
     rc_release(&env->rc, (void**) &env);
     return closure;
@@ -386,8 +385,10 @@ struct LambObject* eval_expr(struct Interpreter* state, struct AST* expr, struct
             return make_lamb_err(string_concat(string_create("[run-time error] attempted to use an undefined name: "), string_clone(expr->u.identifier.name)));
         case AST_LET_IN:
             return eval_let(state, expr, env);
+        case AST_ERR:
+            printf("%s\n", expr->u.err.error_message.b);
+            return NULL;
         default:
-            printf("%d\n", expr->tag);
             assert(0);
     }
 }
@@ -397,10 +398,11 @@ EVALUATION FUNCTIONS END
 */
 
 void interpret(struct Interpreter* state, struct AST* program) {
-    printf("program repr: "); pprint_ast(program);
+    if (program->tag != AST_ERR) { printf("program repr: "); pprint_ast(program);}
     struct Environment *global = env_create(NULL);
     rc_use(&global->rc);
     struct LambObject* val = eval_expr(state, program, global);
+    if (!val) return;
     rc_use(&val->rc);
     printf("> ");
     switch (val->type) {

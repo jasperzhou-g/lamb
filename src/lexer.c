@@ -89,16 +89,17 @@ static struct OptionalToken identifier(struct Lexer* s) {
     } else if (!strncmp(&s->source[s->start], "else", 4)) {
         tok_str = "ELSE";
         token_type = TOK_ELSE;
+    } else if (!strncmp(&s->source[s->start], "letrec", 6)) {
+        tok_str = "LETREC";
+        token_type = TOK_LETREC;
     } else if (!strncmp(&s->source[s->start], "let", 3)) {
         tok_str = "LET";
         token_type = TOK_LET;
     } else if (!strncmp(&s->source[s->start], "fix", 3)) {
         tok_str = "FIX";
         token_type = TOK_FIX;
-    } else if (!strncmp(&s->source[s->start], "letrec", 6)) {
-        tok_str = "LETREC";
-        token_type = TOK_LETREC;
-    } else if (!strncmp(&s->source[s->start], "in", 2)) {
+    }
+    else if (!strncmp(&s->source[s->start], "in", 2)) {
         tok_str = "IN";
         token_type = TOK_IN;
     } else if (!strncmp(&s->source[s->start], "be", 2)) {
