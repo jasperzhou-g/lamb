@@ -30,6 +30,7 @@ struct LambObject {
     enum LambObjectType type;
     void *obj;
     struct Rc rc;
+    void (*print)(struct LambObject* lo);
 };
 
 struct LambClosure {
@@ -67,6 +68,7 @@ struct Environment* env_create(struct Environment* enclosing);
 struct LambObject* env_get(struct Environment* env, struct String key);
 void env_put(struct Environment* env, struct String key, struct LambObject* val);
 void env_free(void* env);
+void env_pprint(struct Environment *env);
 
 void interpret(struct Interpreter* state, struct AST* program);
 

@@ -115,6 +115,20 @@ void rc_release(struct Rc* rc, void** obj) {
     }
 }
 
+static void pprint_lo(struct LambObject* obj) {
+    switch(obj->type) {
+        case LOBJ_NUM:
+            printf("%d", *(int*)obj->obj);
+            break;
+        case LOBJ_ERR:
+            printf("error: %s\n", ((struct String*)obj->obj)->b);
+            break;
+        case LOBJ_CLOSURE:
+            printf("Closure");
+            break;
+    }
+}
+
 struct Environment* env_create(struct Environment* enclosing) {
     struct Environment* env = malloc(sizeof(struct Environment));
     env->enclosing = enclosing;
@@ -133,6 +147,27 @@ static void release_lo(void *lo) {
     struct LambObject* lobj = lo;
     if (!lobj) return;
     rc_release(&lobj->rc, (void**) &lobj);
+}
+
+void pprint_env(struct Environment* env) {
+    if (!env) return;
+    pprint_env(env->enclosing);
+    printf("\t");
+    for (int i = 0; i < env->values->len_buckets; i++) {
+        struct HashMapBucket* curr = env->values->buckets[i];
+        while (curr) {
+            printf("(%s -> ", curr->key.b);
+            struct LambObject* lo = curr->item;
+            if (lo) {
+                lo->print(lo);
+                printf(")");
+            } else {
+                printf("NULL\n");
+            }
+            curr = curr->next;
+        }
+    }
+    printf("\n");
 }
 
 void env_free(void* env) {
@@ -170,6 +205,7 @@ struct LambObject* make_lamb_num(int num) {
     *num_ptr = num;
     obj->type = LOBJ_NUM;
     obj->obj = num_ptr;
+    obj->print = pprint_lo;
     rc_init(&obj->rc, lamb_obj_free);
     return obj;
 }
@@ -180,6 +216,7 @@ struct LambObject* make_lamb_err(struct String err) {
     *err_ptr = err;
     obj->type = LOBJ_ERR;
     obj->obj = err_ptr;
+    obj->print = pprint_lo;
     rc_init(&obj->rc, lamb_obj_free);
     return obj;
 }
@@ -192,6 +229,7 @@ struct LambObject* make_lamb_closure(struct AST* abs, struct String param, struc
     LC->param = param;
     obj->type = LOBJ_CLOSURE;
     obj->obj = LC;
+    obj->print = pprint_lo;
     rc_use(&env->rc);
     rc_init(&obj->rc, lamb_obj_free);
     return obj;
@@ -235,12 +273,13 @@ static struct LambObject* closure_call(struct Interpreter* state, struct LambObj
         return make_lamb_err(string_create("[run-time error]: tried to apply something that's not a function"));
     }
     struct LambClosure* cl = closure->obj;
-    rc_use(&cl->env->rc);
     rc_use(&arg->rc);
-    env_put(cl->env, cl->param, arg);
-    struct LambObject* result = eval_expr(state, cl->code->u.abs.body, cl->env);
+    struct Environment* new_env = env_create(cl->env);
+    rc_use(&new_env->rc);
+    env_put(new_env, cl->param, arg);
+    struct LambObject* result = eval_expr(state, cl->code->u.abs.body, new_env);
+    rc_release(&new_env->rc, (void**) &new_env);
     rc_release(&arg->rc, (void**) &arg);
-    rc_release(&cl->env->rc, (void**) &cl->env);
     return result;
 }
 
@@ -274,39 +313,46 @@ static struct LambObject* eval_app(struct Interpreter* state, struct AST* expr, 
         rc_release(&env->rc, (void**) &env);
         return eval_expr(state, expr->u.app.fn, env);
     } else if (!expr->u.app.alist->u.app_list.next) { //single argument
-        struct LambObject* arg = eval_expr(state, expr->u.app.alist->u.app_list.arg, env);
+        struct Environment* new_env = env_create(env);
+        rc_release(&env->rc, (void**) &env);
+        rc_use(&new_env->rc);
+        struct LambObject* arg = eval_expr(state, expr->u.app.alist->u.app_list.arg, new_env);
         if (arg->type == LOBJ_ERR) {
-            rc_release(&env->rc, (void**) &env);
+            rc_release(&new_env->rc, (void**) &new_env);
             return arg;
         }
         rc_use(&arg->rc);
-        struct LambObject* cl_obj = eval_expr(state, expr->u.app.fn, env);
+        struct LambObject* cl_obj = eval_expr(state, expr->u.app.fn, new_env);
         if (cl_obj->type == LOBJ_ERR) {
             rc_release(&arg->rc, (void**) &arg);
-            rc_release(&env->rc, (void**) &env);
+            rc_release(&new_env->rc, (void**) &new_env);
             return cl_obj;
         }
         rc_use(&cl_obj->rc);
         struct LambObject* result = closure_call(state, cl_obj, arg);
         rc_release(&cl_obj->rc, (void**) &cl_obj);
         rc_release(&arg->rc, (void**) &arg);
-        rc_release(&env->rc, (void**) &env);
+        rc_release(&new_env->rc, (void**) &new_env);
         return result;
     }
     struct AST* alist = expr->u.app.alist;
+    struct Environment* new_env = env_create(env);
+    rc_release(&env->rc, (void**) &env);
     struct LambObject* cl_obj = eval_expr(state, expr->u.app.fn, env);
     if (cl_obj->type == LOBJ_ERR) {
-        rc_release(&env->rc, (void**) &env);
+        rc_use(&new_env->rc);
+        rc_release(&new_env->rc, (void**) &new_env);
         return cl_obj;
     } 
     for (;;) {
+        rc_use(&new_env->rc);
         if (cl_obj->type != LOBJ_CLOSURE) {
-            rc_release(&env->rc, (void**) &env);
+            rc_release(&new_env->rc, (void**) &new_env);
             return make_lamb_err(string_create("[type error] Expected a function to be applied"));
         }
-        struct LambObject* arg_obj = eval_expr(state, alist->u.app_list.arg, env);
+        struct LambObject* arg_obj = eval_expr(state, alist->u.app_list.arg, new_env);
         if (arg_obj->type == LOBJ_ERR) {
-            rc_release(&env->rc, (void**) &env);
+            rc_release(&new_env->rc, (void**) &new_env);
             return arg_obj;
         }
         rc_use(&arg_obj->rc);
@@ -315,15 +361,17 @@ static struct LambObject* eval_app(struct Interpreter* state, struct AST* expr, 
         rc_release(&arg_obj->rc, (void**) &arg_obj);
         rc_release(&cl_obj->rc, (void**) &cl_obj);
         if (result->type == LOBJ_ERR) {
-            rc_release(&env->rc, (void**) &env);
+            rc_release(&new_env->rc, (void**) &new_env);
             return result;
         }
         cl_obj = result;
         alist = alist->u.app_list.next;
+        struct Environment* old_env = new_env;
+        new_env = env_create(old_env);
+        rc_release(&old_env->rc, (void**) &old_env);
         if (!alist) break;
     }
-    // multiple argument bullshitery. there are memory leaks. but, as long as it works it is fine.
-    rc_release(&env->rc, (void**)&env);
+    rc_release(&new_env->rc, (void**)&new_env);
     return cl_obj;
 }
 
@@ -431,6 +479,7 @@ static struct LambObject* eval_if_else(struct Interpreter* state, struct AST* ex
 }
 
 struct LambObject* eval_expr(struct Interpreter* state, struct AST* expr, struct Environment* env) {
+    pprint_env(env);
     switch (expr->tag) { //function table?
         struct LambObject* lo;
         case AST_APP:

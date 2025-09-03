@@ -38,6 +38,7 @@ struct AST {
     } u;
 };
 void pprint_ast(struct AST* ast);
+void pprint_ast_helper(struct AST* ast);
 struct AST* make_abs(struct AST* id, struct AST* body);
 struct AST* make_app(struct AST* fn, struct AST* alist);
 struct AST* cons_alist(struct AST* arg, struct AST* next); //bruh

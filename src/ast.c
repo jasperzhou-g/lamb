@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "ast.h"
 
-static void pprint_ast_helper(struct AST* ast) {
+void pprint_ast_helper(struct AST* ast) {
     if (!ast) return;
     switch (ast->tag) {
         case AST_ABS:
