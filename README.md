@@ -1,6 +1,6 @@
 # Yet Another Sugared Lambda Calculus
 
-Tree-walk interpreter for a call-by-value simple functional language inspired by core ML features.
+Tree-walk interpreter for a call-by-value simple functional language inspired by core ML features, written in C for an extra challenge (not relying on the runtime of a higher-level language).
 A program evaluates to a function or a number.
 
 ## Build instructions and example usage:
